@@ -1,0 +1,107 @@
+setup_t module_setup = setup_module_t {
+{% if lib_dir %}
+    dir = {{ lib_dir }}
+{% else -%}
+	dir = "/usr/lib/phantom"
+{% endif -%}
+	list = {
+    {%- for module in modules %}
+        {{ module }}
+    {%- endfor %}
+	}
+}
+
+scheduler_t main_scheduler = scheduler_simple_t {
+{% if scheduler %}
+    threads = {{ scheduler.threads }}
+    event_buf_size = {{ scheduler.event_buf_size }}
+    timeout_prec = {{ scheduler.timeout_prec }}
+{% else %}
+	threads = 12
+	event_buf_size = 20
+	timeout_prec = 1
+{% endif -%}
+}
+io_t benchmark_io = io_benchmark_t {
+	method_t stream_method = method_stream_ipv4_t {
+		logger_t bencmark_logger = logger_default_t {
+            {% if answ_log %}
+                filename = "{{ answ_log.path }}"
+                level = {{ answ_log.level }}
+            {% else %}
+			filename = "answ.txt"
+            level = all
+            {% endif -%}
+			scheduler = main_scheduler
+		}
+		logger_t brief_logger = logger_brief_t {
+            {% if phout_log %}
+            filename = "{{ phout_log.path }}"
+            time_format = {{ phout_log.format }}
+            {% else %}
+			filename = "phout.txt"
+            time_format = unix
+            {% endif -%}
+			scheduler = main_scheduler
+		}
+		loggers = { brief_logger bencmark_logger }
+		source_t source_log = source_log_t {
+            {% if ammo_path %}
+            filename = "{{ ammo_path }}"
+            {% else %}
+            filename = "ammo.stpd"
+            {% endif -%}
+		}
+
+        {% if ssl_enabled %}
+		transport_t ssl_transport = transport_ssl_t {
+			timeout = 1s
+		}
+        transport = ssl_transport
+        {% endif -%}
+
+		proto_t http_proto = proto_http_t { }
+		proto = http_proto
+        address = {{ target_ip_addr }}
+        port = {{ target_tcp_port }}
+        {% if target_timeout %}
+        timeout = {{ target_timeout }}
+        {% else %}
+        timeout = 10s
+        {% endif -%}
+		source = source_log
+	}
+
+	times_t simple_times = times_simple_t {
+		max = 1s
+		min = 10
+		steps = 20
+	}
+	times_t list_times = times_list_t {
+            values = {{ '{' }}{% for t in time_periods %}{{ t }} {% endfor %}{{ '}' }}
+    }
+
+    {% if phantom_inst_num %}
+    instances = {{ phantom_inst_num }}
+    {% else %}
+    instances = 4000
+    {% endif -%}
+	method = stream_method
+	times = list_times
+	human_readable_report = false
+	scheduler = main_scheduler
+}
+
+stat = {
+    clear = true
+    period = 1s
+    time_format = full
+    list = { benchmark_io }
+    {% if stat_log_path %}
+    filename = "{{ stat_log_path }}"
+    {% else %}
+    filename = "phantom_stat.log"
+    {% endif -%}
+}
+# vim:set ft=htmldjango:
+# vim:set ft=conf:
