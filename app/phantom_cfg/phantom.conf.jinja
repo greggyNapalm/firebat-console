@@ -1,0 +1,71 @@
+setup_t module_setup = setup_module_t {
+    dir = {{ lib_dir }}
+	list = {
+    {%- for module in modules %}
+        {{ module }}
+    {%- endfor %}
+    }
+}
+
+scheduler_t main_scheduler = scheduler_simple_t {
+    threads = {{ scheduler.threads }}
+    event_buf_size = {{ scheduler.event_buf_size }}
+    timeout_prec = {{ scheduler.timeout_prec }}
+}
+io_t benchmark_io = io_benchmark_t {
+    method_t stream_method = method_stream_ipv4_t {
+        logger_t bencmark_logger = logger_default_t {
+            filename = "{{ answ_log.path }}"
+            level = {{ answ_log.level }}
+            scheduler = main_scheduler
+        }
+        logger_t brief_logger = logger_brief_t {
+            filename = "{{ phout_log.path }}"
+            time_format = {{ phout_log.format }}
+            scheduler = main_scheduler
+        }
+        loggers = { brief_logger bencmark_logger }
+        source_t source_log = source_log_t {
+            filename = "{{ ammo_path }}"
+        }
+
+        {% if ssl_enabled %}
+		transport_t ssl_transport = transport_ssl_t {
+			timeout = 1s
+		}
+        transport = ssl_transport
+        {% endif -%}
+
+        proto_t http_proto = proto_http_t { }
+        proto = http_proto
+        address = {{ target_ip_addr }}
+        port = {{ target_tcp_port }}
+        timeout = {{ target_timeout }}
+        source = source_log
+	}
+
+    times_t simple_times = times_simple_t {
+        max = 1s
+        min = 10
+        steps = 20
+    }
+
+    times_t list_times = times_list_t {
+        values = {{ '{' }}{% for t in time_periods %}{{ t }} {% endfor %}{{ '}' }}
+    }
+
+    instances = {{ phantom_inst_num }}
+    method = stream_method
+    times = list_times
+    human_readable_report = false
+    scheduler = main_scheduler
+}
+
+stat = {
+    clear = true
+    period = 1s
+    time_format = full
+    list = { benchmark_io }
+    filename = "{{ stat_log_path }}"
+}
+# vim:set ft=conf:

@@ -8,43 +8,108 @@ Helper script for Phantom load tool.
     * generate phantom.conf
 """
 
+import re
+import socket
+import logging
+
 from jinja2 import Template
 
-def make_conf(fire_cfg):
+def make_conf(fire_cfg, **kwargs):
+    """ Generate ready to use phantom.conf
+    Args:
+        fire_cfg: dict with fire configuration
+
+    Returns:
+        string with phantom.conf inside
+    """
     # d
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(fire_cfg)
+    #pp.pprint(fire_cfg)
     #
-    fire_cfg['modules'] = [
-                            'io_benchmark',
-                            'io_benchmark_method_stream',
-                            'io_benchmark_method_stream_source_log',
-                            'io_benchmark_method_stream_proto_http',
-                        ]
-    if fire_cfg['network_proto'] == 'ipv4':
-        fire_cfg['modules'].append('io_benchmark_method_stream_ipv4')
-    elif fire_cfg['network_proto'] == 'ipv6':
-        fire_cfg['modules'].append('io_benchmark_method_stream_ipv6')
+    logger = logging.getLogger('firebat.console')
+    conf = {
+            'network_proto': 'ipv4',
+            'transport_proto': 'tcp',
+            'lib_dir': '/usr/lib/phantom',
+            'modules': [
+                       'io_benchmark',
+                       'io_benchmark_method_stream',
+                       'io_benchmark_method_stream_source_log',
+                       'io_benchmark_method_stream_proto_http',
+                    ],
+            'scheduler': {
+                            'threads': 13,
+                            'event_buf_size': 20,
+                            'timeout_prec': 1,
+                        },
+            'answ_log': {
+                            'path': 'answ.txt', 
+                            'level': 'all',
+                        },
+            'phout_log': {
+                            'path': 'phout.txt',
+                            'time_format': 'unix',
+                        },
+            'ammo_path': 'ammo.stpd', 
+            'target_timeout': '10s',
+            'instances_num': 1000,
+            'stat_log_path': 'phantom_stat.log',
+            'times': {
+                        'max': '1s',
+                        'min': '10',
+                        'steps': '20',
+                    },
+
+                }
+    conf.update(fire_cfg)
+    conf.update(kwargs)
+
+    if conf['network_proto'] == 'ipv4':
+        conf['modules'].append('io_benchmark_method_stream_ipv4')
+        # We need to validate addr first
+        if ':' in conf['addr']:
+            addr, port = conf['addr'].split(':')
+        else:
+            addr, port = conf['addr'], ''
+        ip_addr_regex = '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+        if re.match(ip_addr_regex, addr):
+            conf['target_ip_addr'] = addr
+            conf['target_tcp_port'] = port
+        else:
+            try:
+                conf['target_ip_addr'] = socket.gethostbyaddr(addr)
+                conf['target_tcp_port'] = port
+            except socket.gaierror, e:
+                __msg = 'Can\'t resolve domain name: %s; \'%s\' > \'%s\'' % \
+                        (addr, conf['name'], conf['addr'])
+                logger.error(__msg)
+    elif conf['network_proto'] == 'ipv6':
+        conf['modules'].append('io_benchmark_method_stream_ipv6')
+        # TODO: validation for ipv6 addr
+        if ':' in conf['addr']:
+            addr, port = conf['addr'].split(':')
+        else:
+            addr, port = conf['addr'], ''
+        conf['target_ip_addr'] = addr
+        conf['target_tcp_port'] = port
     else:
-        raise NameError('Incorrent \'network_proto\' option in: \'%s\'' %\
-                        fire_cfg['name'])
+        __msg = 'Incorrent config option: \'%s\' > \'network_proto\'' % conf['name']
+        logger.error(__msg)
+        raise NameError(__msg)
 
-    if fire_cfg['transport_proto'] == 'ssl':
-        fire_cfg['ssl_enabled'] = True
-        fire_cfg['modules'].append('ssl')
-        fire_cfg['modules'].append('io_benchmark_method_stream_transport_ssl')
-
-    fire_cfg['target_ip_addr'] = '127.0.0.1'
-    fire_cfg['target_tcp_port'] = '8080'
-    
+    if conf['transport_proto'] == 'ssl':
+        conf['ssl_enabled'] = True
+        conf['modules'].append('ssl')
+        conf['modules'].append('io_benchmark_method_stream_transport_ssl')
 
     try:
-        with open('phantom_cfg/phantom.conf.tmpl', 'r') as f:
+        with open('phantom_cfg/phantom.conf.jinja', 'r') as f:
             phantom_cfg_tmlp = f.read()
             f.closed
     except IOError, e:
-        print 'Can\'t open file: %s' % e
+        __msg = 'Can\'t open cfg template file: %s' %e
+        logger.error(__msg)
         return False
     template = Template(phantom_cfg_tmlp)
-    return template.render(fire_cfg)
+    return template.render(conf)
