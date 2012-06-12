@@ -29,39 +29,39 @@ def make_conf(fire_cfg, **kwargs):
     #
     logger = logging.getLogger('firebat.console')
     conf = {
-            'network_proto': 'ipv4',
-            'transport_proto': 'tcp',
-            'lib_dir': '/usr/lib/phantom',
-            'modules': [
-                       'io_benchmark',
-                       'io_benchmark_method_stream',
-                       'io_benchmark_method_stream_source_log',
-                       'io_benchmark_method_stream_proto_http',
-                    ],
-            'scheduler': {
-                            'threads': 13,
-                            'event_buf_size': 20,
-                            'timeout_prec': 1,
-                        },
-            'answ_log': {
-                            'path': 'answ.txt', 
-                            'level': 'all',
-                        },
-            'phout_log': {
-                            'path': 'phout.txt',
-                            'time_format': 'unix',
-                        },
-            'ammo_path': 'ammo.stpd', 
-            'target_timeout': '10s',
-            'instances_num': 1000,
-            'stat_log_path': 'phantom_stat.log',
-            'times': {
-                        'max': '1s',
-                        'min': '10',
-                        'steps': '20',
-                    },
+        'network_proto': 'ipv4',
+        'transport_proto': 'tcp',
+        'lib_dir': '/usr/lib/phantom',
+        'modules': [
+            'io_benchmark',
+            'io_benchmark_method_stream',
+            'io_benchmark_method_stream_source_log',
+            'io_benchmark_method_stream_proto_http',
+        ],
+        'scheduler': {
+            'threads': 13,
+            'event_buf_size': 20,
+            'timeout_prec': 1,
+        },
+        'answ_log': {
+            'path': 'answ.txt', 
+            'level': 'all',
+        },
+        'phout_log': {
+            'path': 'phout.txt',
+            'time_format': 'unix',
+        },
+        'ammo_path': 'ammo.stpd', 
+        'target_timeout': '10s',
+        'instances_num': 1000,
+        'stat_log_path': 'phantom_stat.log',
+        'times': {
+            'max': '1s',
+            'min': '10',
+            'steps': '20',
+        },
 
-                }
+    }
     conf.update(fire_cfg)
     conf.update(kwargs)
 

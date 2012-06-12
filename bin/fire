@@ -19,7 +19,7 @@ import getpass
 
 from configobj import ConfigObj, ConfigObjError
 
-from conf import make_conf 
+from firebat.console.conf import make_conf 
 
 def exit_err(msg):
     logger = logging.getLogger('firebat.console')
@@ -40,10 +40,6 @@ def __build_path(config, fire_name, time):
 
 def main():
     TESTS_PATH = './run'
-    # d
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    #
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', nargs=1, action='store',
                     dest='config_file', default='./fire.conf',
