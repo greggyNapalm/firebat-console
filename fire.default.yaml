@@ -1,0 +1,43 @@
+title:
+    task: 'SOMEPROJ-123'
+    test_name: 'new version; load test; check cpu la'
+    test_dsc: 'The new version of index builder'
+
+fire:
+    -
+        name: 'app1.testarea.edu'
+        tag: ['SOMEPROJ', 'base-search', 'regression']
+        # scheme
+        network_proto: 'ipv4'
+        transport_proto: 'tcp'
+        addr: '8.8.8.8'
+        time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']
+        load: ['line(1,10,2m)', 'const(10,90m)']
+        input_file: 'simple_get1.ammo'
+        input_format: 'plain'
+        instances: 4000
+        # logs
+        writelog: 1
+        savelog: 0
+        saveammo: 0
+    
+    -
+        name: 'app1.testarea.edu'
+        tags: ['SOMEPROJ', 'base-search', 'regression']
+        # scheme
+        network_proto: 'ipv4'
+        transport_proto: 'tcp'
+        addr: 'www.google.com:8080'
+        #addr: 'www.ya.ru:8080'
+        #addr = b.g.f.c.d:8080
+        time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']
+        load: ['line(1,10,2m)', 'const(10,90m)']
+        input_file: 'simple_get1.ammo'
+        input_format: 'plain'
+        instances: 4000
+        # logs
+        writelog: 1
+        savelog: 0
+        saveammo: 0
+    
+# vim:set ft=yaml:
