@@ -8,11 +8,13 @@ Helper script for Phantom load tool.
     * generate phantom.conf
 """
 
+import os 
 import re
 import socket
 import logging
 
 from jinja2 import Template
+import yaml
 
 def make_conf(fire_cfg, **kwargs):
     """ Generate ready to use phantom.conf
@@ -22,11 +24,6 @@ def make_conf(fire_cfg, **kwargs):
     Returns:
         string with phantom.conf inside
     """
-    # d
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    #pp.pprint(fire_cfg)
-    #
     logger = logging.getLogger('firebat.console')
     conf = {
         'network_proto': 'ipv4',
@@ -67,7 +64,7 @@ def make_conf(fire_cfg, **kwargs):
 
     if conf['network_proto'] == 'ipv4':
         conf['modules'].append('io_benchmark_method_stream_ipv4')
-        # We need to validate addr first
+        # We need validate addr first
         if ':' in conf['addr']:
             addr, port = conf['addr'].split(':')
         else:
@@ -78,7 +75,7 @@ def make_conf(fire_cfg, **kwargs):
             conf['target_tcp_port'] = port
         else:
             try:
-                conf['target_ip_addr'] = socket.gethostbyaddr(addr)
+                conf['target_ip_addr'] = socket.gethostbyaddr(addr)[2][0]
                 conf['target_tcp_port'] = port
             except socket.gaierror, e:
                 __msg = 'Can\'t resolve domain name: %s; \'%s\' > \'%s\'' % \
@@ -103,8 +100,9 @@ def make_conf(fire_cfg, **kwargs):
         conf['modules'].append('ssl')
         conf['modules'].append('io_benchmark_method_stream_transport_ssl')
 
+    tmpl_path = os.path.dirname(__file__) + '/phantom.conf.jinja'
     try:
-        with open('phantom_cfg/phantom.conf.jinja', 'r') as f:
+        with open(tmpl_path, 'r') as f:
             phantom_cfg_tmlp = f.read()
             f.closed
     except IOError, e:

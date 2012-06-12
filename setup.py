@@ -24,6 +24,7 @@ setup(
     ],
     zip_safe=False,
     install_requires=[
+        'PyYAML',
         'jinja2',
         'progressbar',
     ],
