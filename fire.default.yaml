@@ -1,3 +1,5 @@
+# Exmaple of firebat console tool config file
+# @see http://phantom-doc-ru.readthedocs.org/en/latest/index.html
 title:
     task: 'SOMEPROJ-123'
     test_name: 'new version; load test; check cpu la'
