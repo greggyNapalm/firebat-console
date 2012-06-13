@@ -22,7 +22,7 @@ def make_conf(fire_cfg, **kwargs):
         fire_cfg: dict with fire configuration
 
     Returns:
-        string with phantom.conf inside
+        str with phantom.conf inside
     """
     logger = logging.getLogger('firebat.console')
     conf = {
