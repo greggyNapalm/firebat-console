@@ -3,10 +3,25 @@
 
 import os
 
+if not hasattr(sys, 'version_info') or sys.version_info < (2, 7, 0, 'final'):
+    raise SystemExit("Firebat requires Python 2.7 or later.")
+
 try:
         from setuptools import setup
 except ImportError:
         from distutils.core import setup
+
+install_requirements = [
+    'PyYAML',
+    'jinja2',
+    'progressbar',
+]
+
+with open("README.rst") as f:
+    README = f.read()
+
+with open("CHANGES.rst") as f:
+    CHANGES = f.read()
 
 setup(
     name='firebat-console',
@@ -14,6 +29,7 @@ setup(
     author='Gregory Komissarov',
     author_email='gregory.komissarov@gmail.com',
     description='Console helpers for Phantom load tool',
+    long_description=README + '\n' + CHANGES,
     license='BSD',
     url='https://github.com/greggyNapalm/firebat_console',
     keywords=['phantom', 'firebat'],
@@ -23,11 +39,9 @@ setup(
         'firebat.console',
     ],
     zip_safe=False,
-    install_requires=[
-        'PyYAML',
-        'jinja2',
-        'progressbar',
-    ],
+    install_requires=install_requirements,
+    tests_require=['nose'],
+    test_suite='nose.collector',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
