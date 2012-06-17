@@ -1,5 +1,8 @@
 Firebat-console
 ===============
+.. image:: https://secure.travis-ci.org/greggyNapalm/firebat_console.png?branch=master
+   :alt: Build Status
+   :target: https://secure.travis-ci.org/greggyNapalm/firebat_console
 
 Console tool designed to make simple test case for Phantom load tool.
 
