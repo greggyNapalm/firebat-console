@@ -1,0 +1,22 @@
+172 big
+GET /search/v2/coat?category=warm&text=big HTTP/1.1
+Host: target.changeme.com
+User-Agent: TankKG v.default
+Referer: https://github.com/greggyNapalm/ammo
+Accept: */*
+
+175 supper
+GET /search/v2/coat?category=warm&text=supper HTTP/1.1
+Host: target.changeme.com
+User-Agent: TankKG v.default
+Referer: https://github.com/greggyNapalm/ammo
+Accept: */*
+
+174
+GET /search/v2/coat?category=warm&text=black HTTP/1.1
+Host: target.changeme.com
+User-Agent: TankKG v.default
+Referer: https://github.com/greggyNapalm/ammo
+Accept: */*
+
+0
