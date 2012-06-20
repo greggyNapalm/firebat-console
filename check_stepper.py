@@ -25,7 +25,7 @@ def main():
     logger.addHandler(ch)
 
     #SCHEMA = 'const(5,2m)'
-    SCHEMA = 'aline(1,10,1m)'
+    SCHEMA = 'line(1,11,1m)'
     AMMO_PATH = './test.ammo'
 
     try:
@@ -35,15 +35,15 @@ def main():
         logger.error('Error in load schema format: \'%s\'' % e.value['schema'])
         logger.error(e.value['msg'])
 
-    with open(AMMO_PATH, 'rb') as ammo_fh:
-        try:
-            for req in parse_ammo(ammo_fh):
-                sys.stdout.write('+++\n')
-                sys.stdout.write(req % 555)
-        except StepperAmmoFormat, e:
-            logger.error('Error in ammo file: %s' % e.value['file_path'])
-            logger.error('At byte possition: %s' % e.value['byte_offset'])
-            logger.error('Line looks like: \'%s\'' % e.value['err_line'])
+    #with open(AMMO_PATH, 'rb') as ammo_fh:
+    #    try:
+    #        for req in parse_ammo(ammo_fh):
+    #            sys.stdout.write('+++\n')
+    #            sys.stdout.write(req % 555)
+    #    except StepperAmmoFormat, e:
+    #        logger.error('Error in ammo file: %s' % e.value['file_path'])
+    #        logger.error('At byte possition: %s' % e.value['byte_offset'])
+    #        logger.error('Line looks like: \'%s\'' % e.value['err_line'])
 
     logger.debug('Job done.')
 

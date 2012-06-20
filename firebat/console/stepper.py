@@ -95,7 +95,6 @@ def dec_load_schema(schema):
             except_data['msg'] += msg
         raise StepperSchemaFormat(except_data)
 
-
     if schema.startswith('line'):
         schema = schema.strip('line(').rstrip(')')
         rps_from, rps_to, duration = schema.split(',')
@@ -105,13 +104,20 @@ def dec_load_schema(schema):
 
         duration = __trans_to_ms(duration)
         print 'line', rps_from, rps_to, duration
-        step_duration = duration / float(rps_to)
-        step_val = 1
-        print 'step_duration: %s' % step_duration
-        timestamp = 0
-        while timestamp < duration:
-            yield timestamp
-            timestamp += step_duration
+        rps_to = float(rps_to)
+        rps_from = float(rps_from)
+        #duration = float(duration)
+        k = (rps_to - rps_from + 1) / duration
+        print 'k: %s; rps_from: %s; rps_to: %s; duration: %s' %\
+                (k, rps_from, rps_to, duration)
+
+        cur_rps_bound = 0.0
+        for t in xrange(0, duration + 1):
+            cur_rps = t * k
+            print 't: %s; k: %s' % (t, cur_rps)
+            if int(t * k) > int(cur_rps):
+                cur_rps = t * k
+                yield t
 
     elif schema.startswith('const'):
         schema = schema.strip('const(').rstrip(')')
