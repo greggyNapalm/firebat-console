@@ -14,6 +14,21 @@ import logging
 from exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 
+def schema_format_err(schema, msg=None):
+    ''' Validate and reformat input requests data(ammo file)
+    Args:
+        schema: str, @ see doc for format
+        msg : str, optional error description
+    '''
+
+    except_data = {}
+    except_data['msg'] = 'Wrong schema format'
+    except_data['schema'] = schema
+    if msg:
+        except_data['msg'] += msg
+    raise StepperSchemaFormat(except_data)
+
+
 def parse_ammo(ammo_fh):
     '''Validate and reformat input requests data(ammo file)
     Args:
@@ -52,13 +67,114 @@ def parse_ammo(ammo_fh):
         yield line_form + chunk
 
 
-def dec_load_schema(schema):
-    '''Make time ticks from load schema(lunapark format)
+def const_shema(rps, duration, tick_offset):
+    '''Make time ticks from constraint load algorithm(load schema)
+    Args:
+        rps: float,request peer second
+        duration: load chank duration
+        tick_offset: int, first tick offset
+
+    Returns:
+        generator, which yield int time tick in milliseconds
+    '''
+    delay = 1000 / int(rps)
+    tick = int(tick_offset) - delay
+    last_tick = tick_offset + int(duration) - delay
+    while tick < last_tick:
+        tick += delay
+        yield tick
+
+
+def step_shema(rps_from, rps_to, step_dur, step_size, tick_offset):
+    '''Make time ticks from step load algorithm(load schema)
+    Args:
+        rps_from: float, first step load(request peer second)
+        rps_to: float, last step load(request peer second)
+        step_dur: int, each step time length
+        step_size: int, rps difference between two neighboring steps
+        tick_offset: int, previous time tick position
+
+    Returns:
+        generator, which yield int time tick in milliseconds
+    '''
+    cur_step = rps_from
+    cur_step_border = tick_offset
+    while cur_step < rps_to:
+        #print '\ncur_step: %s; step_dur: %s\n' %\
+        #        (cur_step, step_dur)
+        for tick in const_shema(cur_step, step_dur, cur_step_border):
+            yield tick
+        cur_step += step_size
+        cur_step_border += step_dur
+        #print 'border: %s' % cur_step_border
+
+def line_shema(rps_from, rps_to, duration, tick_offset):
+    '''Make time ticks from line load algorithm(load schema)
+    Args:
+        rps_from: float, starting load
+        rps_to: float, ending load
+        duration: int, time length in milliseconds
+        tick_offset: int, previous time tick position
+
+    Returns:
+        generator, which yield int time tick in milliseconds
+    '''
+    print 'rps_from: %s; rps_to: %s; duration: %s; tick_offset: %s' %\
+            (rps_from, rps_to, duration, tick_offset)
+    k = (rps_to - rps_from) / duration
+    print 'k: %s' % k
+    prev_rps = rps_from
+    check = 1
+    result = []
+    #--
+    #prev_delay = 0
+    #cur_load = rps_from
+    #cur_delay = 1.0 / cur_load
+    #cur_step = 0
+    #threshold = 1.0 / cur_load
+    #cntr = 0
+    #is_first = True
+    #sec_num = int(tick_offset / 1000)
+
+    current = {
+        'load': rps_from,
+        'step_interval': int((1.0 / rps_from) * 1000),
+        'interval': int((1.0 / rps_from) * 1000),
+        'cntr': 0,
+        'last_tick': 0,
+    }
+    print current
+    for t in range(tick_offset, tick_offset + duration + 1):
+        load_fraction = k*t
+        if int(load_fraction - current['load']) == 0:
+            current['load'] += 1
+            current['step_interval'] = (1.0 / current['load']) * 1000
+            #current['interval'] = current['interval']  +
+            print '--->new step, cntr: %s' % current['cntr']
+            current['cntr'] = 0
+            current['interval'] = int((current['interval'] + current['last_tick'] +
+            current['step_interval']) / 2)
+
+        if t > current['interval']:
+            print '+'
+            current['last_tick'] = t
+            current['cntr'] += 1
+            current['interval'] += current['step_interval']
+
+        print 't: %s; load_fraction: %s; load: %s; interval: %s' % (t, k*t,
+                current['load'], current['interval'])
+    #print result
+    return [1,2,3]
+
+
+def process_load_schema(schema, tick_offset):
+    ''' Parse and validate load algorithm(load schema) and call appropriate
+    function.
     Args:
         schema: str, @see docs #FIXME: add docs link
 
     Returns:
-        generator, which yield int - time tick in milliseconds from test start
+        nothing, just run appropriate ticks generator
     '''
 
     def __validate_duration(duration):
@@ -87,52 +203,79 @@ def dec_load_schema(schema):
             duration = int(duration.rstrip('h')) * 60 ** 2
         return duration * 10 ** 3
 
-    def __schema_format_err(schema, msg=None):
-        except_data = {}
-        except_data['msg'] = 'Wrong schema format'
-        except_data['schema'] = schema
-        if msg:
-            except_data['msg'] += msg
-        raise StepperSchemaFormat(except_data)
-
     if schema.startswith('line'):
-        schema = schema.strip('line(').rstrip(')')
-        rps_from, rps_to, duration = schema.split(',')
+        schema_clr = schema.strip('line(').rstrip(')')
+        try:
+            rps_from, rps_to, duration = schema_clr.split(',')
+        except ValueError, e:
+            schema_format_err(schema)
         if not (rps_from.isdigit() and rps_to.isdigit() and\
                 __validate_duration(duration)):
-            __schema_format_err(schema)
+            schema_format_err(schema)
 
         duration = __trans_to_ms(duration)
         print 'line', rps_from, rps_to, duration
         rps_to = float(rps_to)
         rps_from = float(rps_from)
-        #duration = float(duration)
-        k = (rps_to - rps_from + 1) / duration
-        print 'k: %s; rps_from: %s; rps_to: %s; duration: %s' %\
-                (k, rps_from, rps_to, duration)
 
-        cur_rps_bound = 0.0
-        for t in xrange(0, duration + 1):
-            cur_rps = t * k
-            print 't: %s; k: %s' % (t, cur_rps)
-            if int(t * k) > int(cur_rps):
-                cur_rps = t * k
-                yield t
+        for tick in line_shema(rps_from, rps_to, duration, tick_offset):
+            yield tick
+
+        ##duration = float(duration)
+        #k = (rps_to - rps_from + 1) / duration
+        #print 'k: %s; rps_from: %s; rps_to: %s; duration: %s' %\
+        #        (k, rps_from, rps_to, duration)
+
+        #cur_rps_bound = 0.0
+        #for t in xrange(0, duration + 1):
+        #    cur_rps = t * k
+        #    print 't: %s; k: %s' % (t, cur_rps)
+        #    if int(t * k) > int(cur_rps):
+        #        cur_rps = t * k
+        #        yield t
 
     elif schema.startswith('const'):
-        schema = schema.strip('const(').rstrip(')')
-        rps, duration = schema.split(',')
+        schema_clr = schema.strip('const(').rstrip(')')
+        try:
+            rps, duration = schema_clr.split(',')
+        except ValueError, e:
+            schema_format_err(schema)
         if not (rps.isdigit() and __validate_duration(duration)):
-            __schema_format_err(schema)
+            schema_format_err(schema)
 
         duration = __trans_to_ms(duration)
-        print 'const', rps, duration
-        delay = 1000 / int(rps)
-        timestamp = -delay
-        while timestamp < duration - delay:
-            timestamp += delay
-            yield timestamp
+        for tick in const_shema(rps, duration, tick_offset):
+            yield tick
+
     elif schema.startswith('step'):
-        pass
+        schema_clr = schema.strip('step(').rstrip(')')
+        try:
+            rps_from, rps_to, step_size, step_dur = schema_clr.split(',')
+        except ValueError, e:
+            schema_format_err(schema)
+
+        if not (rps_from.isdigit() and rps_to.isdigit() and\
+                step_size.isdigit() and __validate_duration(step_dur)):
+            schema_format_err(schema)
+
+        step_dur = __trans_to_ms(step_dur)
+        rps_from = int(rps_from)
+        rps_to = int(rps_to)
+        step_size = int(step_size)
+
+        # only positive step_size
+        if (rps_from > rps_to) or (step_size <= 0):
+            schema_format_err(schema)
+
+        # TODO: negative step_size
+        # check that chema isn't infinite
+        #if (rps_from < rps_to and step_size <= 0) or\
+        #        (rps_from > rps_to and step_size >= 0) or\
+        #        step_size == 0:
+        #    __schema_format_err(schema)
+
+        for tick in step_shema(rps_from, rps_to, step_dur, step_size,
+                tick_offset):
+            yield tick
     else:
-        __schema_format_err(schema, msg=', Can\'t determine schema type')
+        schema_format_err(schema, msg=', Can\'t determine schema type')
