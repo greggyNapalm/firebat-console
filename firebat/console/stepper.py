@@ -8,6 +8,7 @@ Generate stepped ammo(input data + load schema)
 """
 
 import os
+import sys
 import string
 import logging
 
@@ -119,51 +120,80 @@ def line_shema(rps_from, rps_to, duration, tick_offset):
     Returns:
         generator, which yield int time tick in milliseconds
     '''
-    print 'rps_from: %s; rps_to: %s; duration: %s; tick_offset: %s' %\
-            (rps_from, rps_to, duration, tick_offset)
+    sys.stdout.write('rps_from: %s; rps_to: %s; duration: %s; tick_offset: %s\n' %\
+            (rps_from, rps_to, duration, tick_offset))
     k = (rps_to - rps_from) / duration
-    print 'k: %s' % k
-    prev_rps = rps_from
-    check = 1
-    result = []
-    #--
-    #prev_delay = 0
-    #cur_load = rps_from
-    #cur_delay = 1.0 / cur_load
-    #cur_step = 0
-    #threshold = 1.0 / cur_load
-    #cntr = 0
-    #is_first = True
-    #sec_num = int(tick_offset / 1000)
-
+    sys.stdout.write('k: %s\n' % k)
     current = {
         'load': rps_from,
-        'step_interval': int((1.0 / rps_from) * 1000),
-        'interval': int((1.0 / rps_from) * 1000),
+        'rpms': (rps_from / 1000.0) - 1,
+        'rpms_delta': (rps_to - rps_from) / 1000.0,
+        'step_interval': (1.0 / rps_from) * 1000,
+        'interval': (1.0 / rps_from) * 1000,
+        'prev_fraction': -1.0,
         'cntr': 0,
         'last_tick': 0,
     }
-    print current
+    current['ms_chunk'] = duration / current['rpms_delta']
+    current['magic'] = 1.0 / current['ms_chunk']
+    current['ms_chunk'] = current['ms_chunk'] / 1000.0
+    current['load_chunk'] = duration / current['rpms_delta']
+    #
+    #rpms = rps_from / 1000.0
+    ticks_in_ms = rps_from / 1000.0
+    up = 0.0
+
+    sys.stdout.write(str(current) + '\n')
     for t in range(tick_offset, tick_offset + duration + 1):
+        sys.stdout.write('+' * int(ticks_in_ms))
+        load = (rps_from / 1000.0) + current['magic'] * t 
+
+        up = up + load - ticks_in_ms
+        deficit = up - 1.0
+        if deficit > 0:
+            sys.stdout.write('+')
+            up = deficit
+
+        if int(load - ticks_in_ms) >= 1:
+            ticks_in_ms = int(load)
         load_fraction = k*t
-        if int(load_fraction - current['load']) == 0:
-            current['load'] += 1
-            current['step_interval'] = (1.0 / current['load']) * 1000
-            #current['interval'] = current['interval']  +
-            print '--->new step, cntr: %s' % current['cntr']
-            current['cntr'] = 0
-            current['interval'] = int((current['interval'] + current['last_tick'] +
-            current['step_interval']) / 2)
 
-        if t > current['interval']:
-            print '+'
-            current['last_tick'] = t
-            current['cntr'] += 1
-            current['interval'] += current['step_interval']
+        #up = up + load - ticks_in_ms
+        #deficit = up - 1.0
+        #if deficit > 0:
+        #    sys.stdout.write('+')
+        #    up = deficit
 
-        print 't: %s; load_fraction: %s; load: %s; interval: %s' % (t, k*t,
-                current['load'], current['interval'])
-    #print result
+        #if load_fraction - current['prev_fraction'] >= 1.0:
+        #    current['prev_fraction'] = load_fraction
+        #    current['rpms'] += 1
+        #    sys.stdout.write('--> step**\n')
+
+        #if int(load_fraction - current['load']) == 0:
+        #    sys.stdout.write(load_fraction, ' - ', current['load'])
+        #    sys.stdout.write (str(int(load_fraction - current['load'])))
+        #    current['load'] += 1
+        #    current['step_interval'] = (1.0 / current['load']) * 1000
+        #    #current['interval'] = current['interval']  +
+        #    sys.stdout.write('--->new step, cntr: %s\n' % current['cntr'])
+        #    current['cntr'] = 0
+        #    current['interval'] = (current['interval'] + current['last_tick'] +
+        #    current['step_interval']) / 2.0
+
+        #delta = t - current['interval']
+        ##if t > current['interval']:
+        #if delta > 0:
+        #    sys.stdout.write('+ %s\n' % delta)
+        #    current['last_tick'] = t
+        #    current['cntr'] += 1
+        #    current['interval'] += current['step_interval']
+
+        sys.stdout.write('t: %s; load_fraction: %s; magic: %s; load: %s; up: %s\n' % (t, k*t,
+            current['magic'] * t, load, up))
+
+        #sys.stdout.write('t: %s; load_fraction: %s; load: %s; interval: %s;\
+        #        rpms: %s\n' % (t, k*t, current['magic'],current['load'], current['interval'],
+        #            current['rpms']))
     return [1,2,3]
 
 
