@@ -75,7 +75,7 @@ def make_conf(fire_cfg, **kwargs):
             conf['target_tcp_port'] = port
         else:
             try:
-                conf['target_ip_addr'] = socket.gethostbyaddr(addr)[2][0]
+                conf['target_ip_addr'] = socket.gethostbyname(addr)
                 conf['target_tcp_port'] = port
             except socket.gaierror, e:
                 __msg = 'Can\'t resolve domain name: %s; \'%s\' > \'%s\'' % \
