@@ -16,7 +16,7 @@ from exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 
 def schema_format_err(schema, msg=None):
-    ''' Validate and reformat input requests data(ammo file)
+    ''' Compile exception data in obj attr and rise it.
     Args:
         schema: str, @ see doc for format
         msg : str, optional error description
