@@ -24,7 +24,7 @@ def main():
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    SCHEMA = 'const(2000,2m)'
+    SCHEMA = 'const(3500,2m)'
     #SCHEMA = 'line(1,11,1m)'
     #SCHEMA = 'line(2,11,1m)'
     #SCHEMA = 'line(2000,4000,1m)'

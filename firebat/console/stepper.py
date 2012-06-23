@@ -78,12 +78,14 @@ def const_shema(rps, duration, tick_offset):
     Returns:
         generator, which yield int time tick in milliseconds
     '''
-    delay = 1000 / int(rps)
-    tick = int(tick_offset) - delay
-    last_tick = tick_offset + int(duration) - delay
-    while tick < last_tick:
-        tick += delay
-        yield tick
+    rpms = float(rps) / 1000.0  # requests in millisecond
+    surplus = 0.0
+    for t in xrange(tick_offset, tick_offset + duration + 1):
+        surplus += rpms
+        ticks_in_ms = round(surplus)
+        for indx in xrange(int(ticks_in_ms)):
+            yield t
+        surplus -= ticks_in_ms
 
 
 def step_shema(rps_from, rps_to, step_dur, step_size, tick_offset):
@@ -162,7 +164,7 @@ def process_load_schema(schema, tick_offset):
         schema: str, @see docs #FIXME: add docs link
 
     Returns:
-        nothing, just run appropriate ticks generator
+        runs appropriate ticks generator
     '''
 
     def __validate_duration(duration):
