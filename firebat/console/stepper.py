@@ -109,6 +109,7 @@ def step_shema(rps_from, rps_to, step_dur, step_size, tick_offset):
         cur_step_border += step_dur
         #print 'border: %s' % cur_step_border
 
+
 def line_shema(rps_from, rps_to, duration, tick_offset):
     '''Make time ticks from line load algorithm(load schema)
     Args:
@@ -118,83 +119,40 @@ def line_shema(rps_from, rps_to, duration, tick_offset):
         tick_offset: int, previous time tick position
 
     Returns:
-        generator, which yield int time tick in milliseconds
+        generator obj, which yield int time tick in milliseconds
     '''
-    sys.stdout.write('rps_from: %s; rps_to: %s; duration: %s; tick_offset: %s\n' %\
-            (rps_from, rps_to, duration, tick_offset))
-    k = (rps_to - rps_from) / duration
-    sys.stdout.write('k: %s\n' % k)
-    current = {
-        'load': rps_from,
-        'rpms': (rps_from / 1000.0) - 1,
-        'rpms_delta': (rps_to - rps_from) / 1000.0,
-        'step_interval': (1.0 / rps_from) * 1000,
-        'interval': (1.0 / rps_from) * 1000,
-        'prev_fraction': -1.0,
-        'cntr': 0,
-        'last_tick': 0,
-    }
-    current['ms_chunk'] = duration / current['rpms_delta']
-    current['magic'] = 1.0 / current['ms_chunk']
-    current['ms_chunk'] = current['ms_chunk'] / 1000.0
-    current['load_chunk'] = duration / current['rpms_delta']
-    #
-    #rpms = rps_from / 1000.0
+    der = ((rps_to - rps_from) / 1000.0) / duration  # load derivative
     ticks_in_ms = rps_from / 1000.0
-    up = 0.0
+    if ticks_in_ms < 1:
+        proficit = 1.0
+    up = 0.0  # inaccuracy, because request in millisecond is int, func linear
 
-    sys.stdout.write(str(current) + '\n')
-    for t in range(tick_offset, tick_offset + duration + 1):
-        sys.stdout.write('+' * int(ticks_in_ms))
-        load = (rps_from / 1000.0) + current['magic'] * t 
+    for t in xrange(tick_offset, tick_offset + duration + 1):
+        if ticks_in_ms > 1:
+            #sys.stdout.write('+' * int(ticks_in_ms))
+            for indx in int(ticks_in_ms):
+                yield t
+        else:
+            proficit += ticks_in_ms
+            if proficit > 1.0:
+                yield t
+                #sys.stdout.write('+')
+                proficit -= 1.0
+        load = (rps_from / 1000.0) + der * t
 
         up = up + load - ticks_in_ms
         deficit = up - 1.0
         if deficit > 0:
-            sys.stdout.write('+')
+            yield t
+            #sys.stdout.write('+')
             up = deficit
 
         if int(load - ticks_in_ms) >= 1:
             ticks_in_ms = int(load)
-        load_fraction = k*t
 
-        #up = up + load - ticks_in_ms
-        #deficit = up - 1.0
-        #if deficit > 0:
-        #    sys.stdout.write('+')
-        #    up = deficit
-
-        #if load_fraction - current['prev_fraction'] >= 1.0:
-        #    current['prev_fraction'] = load_fraction
-        #    current['rpms'] += 1
-        #    sys.stdout.write('--> step**\n')
-
-        #if int(load_fraction - current['load']) == 0:
-        #    sys.stdout.write(load_fraction, ' - ', current['load'])
-        #    sys.stdout.write (str(int(load_fraction - current['load'])))
-        #    current['load'] += 1
-        #    current['step_interval'] = (1.0 / current['load']) * 1000
-        #    #current['interval'] = current['interval']  +
-        #    sys.stdout.write('--->new step, cntr: %s\n' % current['cntr'])
-        #    current['cntr'] = 0
-        #    current['interval'] = (current['interval'] + current['last_tick'] +
-        #    current['step_interval']) / 2.0
-
-        #delta = t - current['interval']
-        ##if t > current['interval']:
-        #if delta > 0:
-        #    sys.stdout.write('+ %s\n' % delta)
-        #    current['last_tick'] = t
-        #    current['cntr'] += 1
-        #    current['interval'] += current['step_interval']
-
-        sys.stdout.write('t: %s; load_fraction: %s; magic: %s; load: %s; up: %s\n' % (t, k*t,
-            current['magic'] * t, load, up))
-
-        #sys.stdout.write('t: %s; load_fraction: %s; load: %s; interval: %s;\
-        #        rpms: %s\n' % (t, k*t, current['magic'],current['load'], current['interval'],
-        #            current['rpms']))
-    return [1,2,3]
+        #sys.stdout.write('t: %s; magic: %s; load: %s; up: %s;\
+        #        tics: %s\n' % (t, der * t, load, up,
+        #            ticks_in_ms))
 
 
 def process_load_schema(schema, tick_offset):
@@ -250,19 +208,6 @@ def process_load_schema(schema, tick_offset):
 
         for tick in line_shema(rps_from, rps_to, duration, tick_offset):
             yield tick
-
-        ##duration = float(duration)
-        #k = (rps_to - rps_from + 1) / duration
-        #print 'k: %s; rps_from: %s; rps_to: %s; duration: %s' %\
-        #        (k, rps_from, rps_to, duration)
-
-        #cur_rps_bound = 0.0
-        #for t in xrange(0, duration + 1):
-        #    cur_rps = t * k
-        #    print 't: %s; k: %s' % (t, cur_rps)
-        #    if int(t * k) > int(cur_rps):
-        #        cur_rps = t * k
-        #        yield t
 
     elif schema.startswith('const'):
         schema_clr = schema.strip('const(').rstrip(')')

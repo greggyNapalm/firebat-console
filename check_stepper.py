@@ -24,8 +24,9 @@ def main():
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    #SCHEMA = 'const(5,2m)'
-    SCHEMA = 'line(2,11,1m)'
+    SCHEMA = 'const(2000,2m)'
+    #SCHEMA = 'line(1,11,1m)'
+    #SCHEMA = 'line(2,11,1m)'
     #SCHEMA = 'line(2000,4000,1m)'
     #SCHEMA = 'step(1,10,1,1m)'
     #SCHEMA = {'type': 'step', 'from':1, 'to':10, 'step_dur':2 }
