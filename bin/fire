@@ -11,30 +11,39 @@ Helper script for Phantom load tool.
     * aggregate result data.
 """
 
+import os
 import sys
 from datetime import date, datetime
 import argparse
 import logging
 import getpass
+import itertools
+from progressbar import Bar, ProgressBar, Percentage
 
 import yaml
 
-from firebat.console.conf import make_conf 
+from firebat.console.conf import make_conf
+from firebat.console.stepper import parse_ammo, process_load_schema
+from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
+
 
 def exit_err(msg):
     logger = logging.getLogger('firebat.console')
-    logger.error(msg)
+    if isinstance(msg, str):
+        msg = [msg, ]
+    for m in msg:
+        logger.error(m)
     if not logger.handlers:
         sys.stderr.write(msg)
     sys.exit(1)
 
 
-def __build_path(config, fire, time):
-    test_path = './fire/'
-    test_path += getpass.getuser() + '/'
-    test_path += config['title']['task'] + '/'
+def __build_path(orig_wd, config, fire, time):
+    test_path = orig_wd + '/'
+    test_path += config['title']['task'] + '_'
+    test_path += getpass.getuser() + '_'
     test_path += time.strftime('%Y%m%d-%H%M%S') + '/'
-    test_path +=  fire['name']
+    test_path += fire['name']
     return test_path
 
 
@@ -43,11 +52,14 @@ def main():
     import pprint
     pp = pprint.PrettyPrinter(indent=4)
     #d
-    TESTS_PATH = './run'
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', nargs=1, action='store',
                     dest='config_file', default='./fire.yaml',
                     help='path to configuration file',)
+
+    parser.add_argument('-a', '--ammo', action='store',
+                    dest='ammo_file', default=None,
+                    help='path to ammo file',)
 
     parser.add_argument('--debug', action="store_const", const=True,
             help='Whether to show debug msg in STDOUT', dest='debug')
@@ -56,14 +68,13 @@ def main():
                     version='%(prog)s 0.0.1')
     args = parser.parse_args()
 
-
     logger = logging.getLogger('firebat.console')
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     if args.debug:
         ch.setLevel(logging.DEBUG)
     else:
-        ch.setLevel(logging.ERROR)
+        ch.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s  %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
@@ -78,11 +89,74 @@ def main():
 
     now = datetime.now()
     #pp.pprint(config)
-
+    ammo_cache = {}
+    orig_wd = os.getcwd()
     for f in config['fire']:
-        path = __build_path(config, f, now)
-        print make_conf(f)
-    logger.debug('Job done.')
+        # TODO: add ProgressBar
+        # prepare progress bar
+        #for s in f['load']:
+        #pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=size).start()
+        #
+        job_path = __build_path(orig_wd, config, f, now)
+        os.makedirs(job_path)
+        os.chdir(job_path)
+
+        with open('phantom.conf', 'w+') as cfg_fh:
+            cfg_fh.write(make_conf(f))
+
+        if args.ammo_file:
+            ammo_path = args.ammo_file
+        else:
+            ammo_path = f['input_file']
+
+        logger.info('Processing fire: %s' % f['name'])
+        logger.info('Ammo file: %s' % ammo_path)
+        logger.info('Load schema: %s' % f['load'])
+        with open(ammo_path, 'r') as ammo_fh,\
+            open('ammo.stpd', 'w+') as stpd_fh:
+            f_path = os.path.abspath(ammo_fh.name)
+            if f['cache_ammo']:
+                ammo_cache[f_path] = {'chunks': [], }
+            ammos = parse_ammo(ammo_fh)
+            offset = f['offset']
+            for schema in f['load']:
+                for tick in process_load_schema(schema, offset):
+                    try:
+                        try:
+                            m_line, chunk = ammo_cache[f_path]['cycle'].next()
+                            #sys.stdout.write('-->Cache, baybe!<--')
+                        except KeyError:
+                            m_line, chunk = ammos.next()
+                            if f_path in ammo_cache:
+                                ammo_cache[f_path]['chunks'].append(\
+                                        (m_line, chunk))
+                    except StopIteration:
+                        # chunks in ammo file run out
+                        if f['loop_ammo']:
+                            # need to restart requests chunks generation or
+                            # enable cashe if it present.
+                            if f_path in ammo_cache:
+                                if not 'cycle' in ammo_cache[f_path]:
+                                    ammo_cache[f_path]['cycle'] =\
+                                    itertools.cycle(ammo_cache[f_path]['chunks'])
+                            else:
+                                ammo_fh.seek(0)
+                                ammos = parse_ammo(ammo_fh)
+                                m_line, chunk = ammos.next()
+                        else:
+                            stpd_fh.write('0')
+                            msg = [
+                                'Not enough requests in ammo file' +
+                                ' to cover load schema.',
+                                'File: %s' % f['input_file'],
+                                'Schema: %s' % schema,
+                            ]
+                            exit_err(msg)
+                    req_stpd = m_line % tick + chunk + '\n'
+                    stpd_fh.write(req_stpd)
+                offset = tick  # use last time tick as next load schema offset
+            stpd_fh.write('0')  # close stpd file according format
+    logger.info('Job done.')
 
 if __name__ == '__main__':
     main()

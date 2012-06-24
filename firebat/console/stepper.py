@@ -65,7 +65,7 @@ def parse_ammo(ammo_fh):
             break
 
         chunk = ammo_fh.read(int(line_spltd[0]))
-        yield line_form + chunk
+        yield (line_form, chunk)
 
 
 def const_shema(rps, duration, tick_offset):
@@ -125,14 +125,14 @@ def line_shema(rps_from, rps_to, duration, tick_offset):
     '''
     der = ((rps_to - rps_from) / 1000.0) / duration  # load derivative
     ticks_in_ms = rps_from / 1000.0
-    if ticks_in_ms < 1:
-        proficit = 1.0
+    #if ticks_in_ms < 1:
+    proficit = 1.0
     up = 0.0  # inaccuracy, because request in millisecond is int, func linear
 
     for t in xrange(tick_offset, tick_offset + duration + 1):
         if ticks_in_ms > 1:
             #sys.stdout.write('+' * int(ticks_in_ms))
-            for indx in int(ticks_in_ms):
+            for indx in xrange(int(ticks_in_ms)):
                 yield t
         else:
             proficit += ticks_in_ms
@@ -161,7 +161,7 @@ def process_load_schema(schema, tick_offset):
     ''' Parse and validate load algorithm(load schema) and call appropriate
     function.
     Args:
-        schema: str, @see docs #FIXME: add docs link
+        schema: str or tuple, @see docs #FIXME: add docs link
 
     Returns:
         runs appropriate ticks generator
@@ -193,6 +193,7 @@ def process_load_schema(schema, tick_offset):
             duration = int(duration.rstrip('h')) * 60 ** 2
         return duration * 10 ** 3
 
+    #if isinstance(schema, tuple):
     if schema.startswith('line'):
         schema_clr = schema.strip('line(').rstrip(')')
         try:
@@ -204,7 +205,7 @@ def process_load_schema(schema, tick_offset):
             schema_format_err(schema)
 
         duration = __trans_to_ms(duration)
-        print 'line', rps_from, rps_to, duration
+        #print 'line', rps_from, rps_to, duration
         rps_to = float(rps_to)
         rps_from = float(rps_from)
 
