@@ -24,7 +24,7 @@ import yaml
 
 from firebat.console.conf import make_conf
 from firebat.console.stepper import parse_ammo, process_load_schema,\
-parse_schema
+fire_duration
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 
@@ -93,11 +93,8 @@ def main():
     ammo_cache = {}
     orig_wd = os.getcwd()
     for f in config['fire']:
-        # TODO: add ProgressBar
-        # prepare progress bar
-        #for s in f['load']:
-        #pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=size).start()
-        #
+        pbar_max = fire_duration(f)
+        pbar = ProgressBar(widgets=[Percentage(), Bar()], maxval=pbar_max).start()
         job_path = __build_path(orig_wd, config, f, now)
         os.makedirs(job_path)
         os.chdir(job_path)
@@ -119,7 +116,7 @@ def main():
             if f['cache_ammo']:
                 ammo_cache[f_path] = {'chunks': [], }
             ammos = parse_ammo(ammo_fh)
-            offset = f['offset']
+            offset = f.get('offset', 0)
             for schema in f['load']:
                 for tick in process_load_schema(schema, offset):
                     try:
@@ -155,8 +152,10 @@ def main():
                             exit_err(msg)
                     req_stpd = m_line % tick + chunk + '\n'
                     stpd_fh.write(req_stpd)
+                    pbar.update(tick)
                 offset = tick  # use last time tick as next load schema offset
             stpd_fh.write('0')  # close stpd file according format
+        pbar.finish()
     logger.info('Job done.')
 
 if __name__ == '__main__':

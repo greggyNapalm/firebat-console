@@ -93,12 +93,16 @@ def parse_schema(schema):
         if (rps_from > rps_to) or (step_size <= 0):
             schema_format_err(schema, msg=', only growing load allowed')
 
+        step_dur = trans_to_ms(step_dur, schema)
+        steps_num = (rps_to - rps_from) / step_size
+        duration = (steps_num + 1) * step_dur
         result = {
             'format': 'step',
             'rpms_from': rps_from / 1000.0,
             'rpms_to': rps_to / 1000.0,
             'step_size': step_size / 1000.0,
-            'step_dur': trans_to_ms(step_dur, schema),
+            'step_dur': step_dur,
+            'duration': duration,
         }
         return result
     elif schema[0] == 'line':
@@ -262,3 +266,16 @@ def process_load_schema(schema, tick_offset):
         schema_format_err(schema, msg=', schema pasrser malformed!')
     for tick in gen:
         yield tick
+
+def fire_duration(fire):
+    ''' Calculate total fire(job) duration.
+    Args:
+        fire: dict from cfg file.
+
+    Returns:
+        int, duration in milliseconds.
+    '''
+    total_duration = 0
+    for schema in fire['load']:
+        total_duration += parse_schema(schema)['duration']
+    return total_duration
