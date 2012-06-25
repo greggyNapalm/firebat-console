@@ -23,7 +23,8 @@ from progressbar import Bar, ProgressBar, Percentage
 import yaml
 
 from firebat.console.conf import make_conf
-from firebat.console.stepper import parse_ammo, process_load_schema
+from firebat.console.stepper import parse_ammo, process_load_schema,\
+parse_schema
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 

@@ -170,7 +170,6 @@ def const_shema(rpms, duration, tick_offset):
     Returns:
         generator obj, which yields int time tick in milliseconds
     '''
-    #rpms = float(rps) / 1000.0  # requests in millisecond
     surplus = 0.0
     for t in xrange(tick_offset, tick_offset + duration + 1):
         surplus += rpms
@@ -203,7 +202,6 @@ def step_shema(rpms_from, rpms_to, step_dur, step_size, tick_offset):
         cur_step_border += step_dur
 
 
-#def line_shema(rps_from, rps_to, duration, tick_offset):
 def line_shema(rpms_from, rpms_to, duration, tick_offset):
     '''Make time ticks from line load algorithm(load schema)
     Args:
@@ -215,146 +213,33 @@ def line_shema(rpms_from, rpms_to, duration, tick_offset):
     Returns:
         generator obj, which yields int time tick in milliseconds
     '''
-    #der = ((rps_to - rps_from) / 1000.0) / duration  # load derivative
     der = (rpms_to - rpms_from) / duration  # load derivative
-    #ticks_in_ms = rps_from / 1000.0
     ticks_in_ms = rpms_from
-    #if ticks_in_ms < 1:
     proficit = 1.0
     up = 0.0  # inaccuracy, because request in millisecond is int, func linear
 
     for t in xrange(tick_offset, tick_offset + duration + 1):
         if ticks_in_ms > 1:
-            #sys.stdout.write('+' * int(ticks_in_ms))
             for indx in xrange(int(ticks_in_ms)):
                 yield t
         else:
             proficit += ticks_in_ms
             if proficit > 1.0:
                 yield t
-                #sys.stdout.write('+')
                 proficit -= 1.0
-        #load = (rps_from / 1000.0) + der * t
         load = rpms_from + der * t
 
         up = up + load - ticks_in_ms
         deficit = up - 1.0
         if deficit > 0:
             yield t
-            #sys.stdout.write('+')
             up = deficit
 
         if int(load - ticks_in_ms) >= 1:
             ticks_in_ms = int(load)
 
-        #sys.stdout.write('t: %s; magic: %s; load: %s; up: %s;\
-        #        tics: %s\n' % (t, der * t, load, up,
-        #            ticks_in_ms))
-
 
 def process_load_schema(schema, tick_offset):
-    ''' Parse and validate load algorithm(load schema) and call appropriate
-    function.
-    Args:
-        schema: str or tuple, @see docs #FIXME: add docs link
-
-    Returns:
-        runs appropriate ticks generator
-    '''
-
-    def __validate_duration(duration):
-        '''Check conformity of short notation
-        Args:
-            duration: str with declare time interval in short notation
-
-        Returns:
-            bool, true if short notation is valid
-        '''
-        trans_table = string.maketrans('', '')
-        allowed = string.digits + 'smh'
-        return not duration.translate(trans_table, allowed)
-
-    def __trans_to_ms(duration):
-        '''Transfer duration from short notation to milliseconds
-        Args:
-            duration: str with declare time interval in short notation
-
-        Returns:
-            int, time interval in milliseconds
-        '''
-        if duration.endswith('m'):
-            duration = int(duration.rstrip('m')) * 60
-        elif duration.endswith('h'):
-            duration = int(duration.rstrip('h')) * 60 ** 2
-        return duration * 10 ** 3
-
-    #if isinstance(schema, tuple):
-    if schema.startswith('line'):
-        schema_clr = schema.strip('line(').rstrip(')')
-        try:
-            rps_from, rps_to, duration = schema_clr.split(',')
-        except ValueError, e:
-            schema_format_err(schema)
-        if not (rps_from.isdigit() and rps_to.isdigit() and\
-                __validate_duration(duration)):
-            schema_format_err(schema)
-
-        duration = __trans_to_ms(duration)
-        #print 'line', rps_from, rps_to, duration
-        rps_to = float(rps_to)
-        rps_from = float(rps_from)
-
-        for tick in line_shema(rps_from, rps_to, duration, tick_offset):
-            yield tick
-
-    elif schema.startswith('const'):
-        schema_clr = schema.strip('const(').rstrip(')')
-        try:
-            rps, duration = schema_clr.split(',')
-        except ValueError, e:
-            schema_format_err(schema)
-        if not (rps.isdigit() and __validate_duration(duration)):
-            schema_format_err(schema)
-
-        duration = __trans_to_ms(duration)
-        for tick in const_shema(rps, duration, tick_offset):
-            yield tick
-
-    elif schema.startswith('step'):
-        schema_clr = schema.strip('step(').rstrip(')')
-        try:
-            rps_from, rps_to, step_size, step_dur = schema_clr.split(',')
-        except ValueError, e:
-            schema_format_err(schema)
-
-        if not (rps_from.isdigit() and rps_to.isdigit() and\
-                step_size.isdigit() and __validate_duration(step_dur)):
-            schema_format_err(schema)
-
-        step_dur = __trans_to_ms(step_dur)
-        rps_from = int(rps_from)
-        rps_to = int(rps_to)
-        step_size = int(step_size)
-
-        # only positive step_size
-        if (rps_from > rps_to) or (step_size <= 0):
-            schema_format_err(schema)
-
-        # TODO: negative step_size
-        # check that chema isn't infinite
-        #if (rps_from < rps_to and step_size <= 0) or\
-        #        (rps_from > rps_to and step_size >= 0) or\
-        #        step_size == 0:
-        #    __schema_format_err(schema)
-
-        for tick in step_shema(rps_from, rps_to, step_dur, step_size,
-                tick_offset):
-            yield tick
-    else:
-        schema_format_err(schema, msg=', Can\'t determine schema type')
-
-
-def process_load_schema1(schema, tick_offset):
     ''' Parse and validate load algorithm(load schema) and call appropriate
     function.
     Args:
@@ -366,14 +251,11 @@ def process_load_schema1(schema, tick_offset):
     '''
     s = parse_schema(schema)
     if s['format'] == 'const':
-        #gen = const_shema(rps, duration, tick_offset)
         gen = const_shema(s['rpms'], s['duration'], tick_offset)
     elif s['format'] == 'step':
-        #gen = step_shema(rps_from, rps_to, step_dur, step_size, tick_offset)
         gen = step_shema(s['rpms_from'], s['rpms_to'], s['step_dur'],\
                          s['step_size'], tick_offset)
     elif s['format'] == 'line':
-        #gen = line_shema(rps_from, rps_to, duration, tick_offset)
         gen = line_shema(s['rpms_from'], s['rpms_to'], s['duration'],\
                          tick_offset)
     else:
