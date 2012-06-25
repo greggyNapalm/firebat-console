@@ -8,9 +8,10 @@ Console tool designed to make simple test case for Phantom load tool.
 
 Documentation
 -------------
-More info and documentation can be found at: http://firebat-console.readthedocs.org/
 
-Russian documentation is also available: http://firebat-console-ru.readthedocs.org/
+More info and documentation can be found at: `<http://firebat-console.readthedocs.org/>`_
+
+Russian documentation is also available: `<http://firebat-console-ru.readthedocs.org/>`_
 
 
 Installation
