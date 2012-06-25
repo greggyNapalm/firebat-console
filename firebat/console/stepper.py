@@ -58,6 +58,8 @@ def trans_to_ms(duration, schema):
         duration = int(duration.rstrip('m')) * 60
     elif duration.endswith('h'):
         duration = int(duration.rstrip('h')) * 60 ** 2
+    else:
+        duration = int(duration)
     return duration * 10 ** 3
 
 

@@ -17,6 +17,7 @@ fire:
         load: [['line', 1000, 5000, '10m'], ['const', 5000, '30m'], ['step', 1, 51, 5, '2m']]
         input_file: 'simple_get1.ammo'
         input_format: 'plain'
+        cache_ammo: 0
         instances: 4000
         # logs
         writelog: 1
