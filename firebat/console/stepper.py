@@ -30,13 +30,105 @@ def schema_format_err(schema, msg=None):
     raise StepperSchemaFormat(except_data)
 
 
+def validate_duration(duration):
+    '''Check conformity of short notation
+    Args:
+        duration: str with declare time interval in short notation
+
+    Returns:
+        bool, true if short notation is valid
+    '''
+    trans_table = string.maketrans('', '')
+    allowed = string.digits + 'smh'
+    return not duration.translate(trans_table, allowed)
+
+
+def trans_to_ms(duration, schema):
+    '''Transfer duration from short notation to milliseconds
+    Args:
+        duration: str with declare time interval in short notation
+        schema: list, used in exception to be able to display in UI.
+
+    Returns:
+        int, time interval in milliseconds
+    '''
+    if not validate_duration(duration):
+        schema_format_err(schema, msg=', Duration malformed')
+    if duration.endswith('m'):
+        duration = int(duration.rstrip('m')) * 60
+    elif duration.endswith('h'):
+        duration = int(duration.rstrip('h')) * 60 ** 2
+    return duration * 10 ** 3
+
+
+def parse_schema(schema):
+    ''' Parse and validate load algorithm(load schema).
+    Args:
+        schema: list, @see docs # TODO: add docs link.
+
+    Returns:
+        dict with translated data (All in milliseconds).
+    '''
+    if not isinstance(schema, list):
+        schema_format_err(schema, msg=', Schema shud be list')
+    if schema[0] == 'const':
+        rps, duration_s = schema[-2:]
+        if not (isinstance(rps, int) and isinstance(duration_s, str)):
+            schema_format_err(schema)
+
+        result = {
+            'format': 'const',
+            'rpms': rps / 1000.0,
+            'duration': trans_to_ms(duration_s, schema),
+        }
+        return result
+    elif schema[0] == 'step':
+        rps_from, rps_to, step_size, step_dur = schema[-4:]
+        if not (isinstance(rps_from, int) and\
+                isinstance(rps_to, int) and\
+                isinstance(step_size, int) and\
+                isinstance(step_dur, str)):
+            schema_format_err(schema)
+
+        if (rps_from > rps_to) or (step_size <= 0):
+            schema_format_err(schema, msg=', only growing load allowed')
+
+        result = {
+            'format': 'step',
+            'rpms_from': rps_from / 1000.0,
+            'rpms_to': rps_to / 1000.0,
+            'step_size': step_size / 1000.0,
+            'step_dur': trans_to_ms(step_dur, schema),
+        }
+        return result
+    elif schema[0] == 'line':
+        rps_from, rps_to, duration = schema[-3:]
+        if not (isinstance(rps_from, int) and\
+                isinstance(rps_to, int) and\
+                isinstance(duration, str)):
+            schema_format_err(schema)
+
+        if (rps_from > rps_to):
+            schema_format_err(schema, msg=', only growing load allowed')
+
+        result = {
+            'format': 'line',
+            'rpms_from': rps_from / 1000.0,
+            'rpms_to': rps_to / 1000.0,
+            'duration': trans_to_ms(duration, schema),
+        }
+        return result
+    else:
+        schema_format_err(schema, msg=', Can\'t determine schema type')
+
+
 def parse_ammo(ammo_fh):
     '''Validate and reformat input requests data(ammo file)
     Args:
         ammo_fh: File object, content in lunapark ammo format
 
     Returns:
-        generator, which yield str with placeholder for timestamp
+        generator, which yield tuple with metaline and request text
     '''
     def __file_format_err(ammo_fh, line):
         except_data = {}
@@ -68,17 +160,17 @@ def parse_ammo(ammo_fh):
         yield (line_form, chunk)
 
 
-def const_shema(rps, duration, tick_offset):
+def const_shema(rpms, duration, tick_offset):
     '''Make time ticks from constraint load algorithm(load schema)
     Args:
-        rps: float,request peer second
-        duration: load chank duration
-        tick_offset: int, first tick offset
+        rpms: int,request peer millisecond
+        duration: load chank duration in milliseconds
+        tick_offset: int, first tick offset in milliseconds
 
     Returns:
-        generator, which yield int time tick in milliseconds
+        generator obj, which yields int time tick in milliseconds
     '''
-    rpms = float(rps) / 1000.0  # requests in millisecond
+    #rpms = float(rps) / 1000.0  # requests in millisecond
     surplus = 0.0
     for t in xrange(tick_offset, tick_offset + duration + 1):
         surplus += rpms
@@ -88,43 +180,45 @@ def const_shema(rps, duration, tick_offset):
         surplus -= ticks_in_ms
 
 
-def step_shema(rps_from, rps_to, step_dur, step_size, tick_offset):
+def step_shema(rpms_from, rpms_to, step_dur, step_size, tick_offset):
     '''Make time ticks from step load algorithm(load schema)
     Args:
-        rps_from: float, first step load(request peer second)
-        rps_to: float, last step load(request peer second)
-        step_dur: int, each step time length
-        step_size: int, rps difference between two neighboring steps
+        rpms_from: int, first step load(request peer millisecond)
+        rpms_to: int, last step load(request peer millisecond)
+        step_dur: int, each step time length in milliseconds
+        step_size: int, rpms difference between two neighboring steps
         tick_offset: int, previous time tick position
 
     Returns:
-        generator, which yield int time tick in milliseconds
+        generator obj, which yields int time tick in milliseconds
     '''
-    cur_step = rps_from
+    cur_step = rpms_from
     cur_step_border = tick_offset
-    while cur_step < rps_to:
-        #print '\ncur_step: %s; step_dur: %s\n' %\
-        #        (cur_step, step_dur)
+    while cur_step <= rpms_to:
+        cntr = 0.0
         for tick in const_shema(cur_step, step_dur, cur_step_border):
+            cntr += 1
             yield tick
         cur_step += step_size
         cur_step_border += step_dur
-        #print 'border: %s' % cur_step_border
 
 
-def line_shema(rps_from, rps_to, duration, tick_offset):
+#def line_shema(rps_from, rps_to, duration, tick_offset):
+def line_shema(rpms_from, rpms_to, duration, tick_offset):
     '''Make time ticks from line load algorithm(load schema)
     Args:
-        rps_from: float, starting load
-        rps_to: float, ending load
+        rpms_from: int, starting load
+        rpms_to: int, ending load
         duration: int, time length in milliseconds
         tick_offset: int, previous time tick position
 
     Returns:
-        generator obj, which yield int time tick in milliseconds
+        generator obj, which yields int time tick in milliseconds
     '''
-    der = ((rps_to - rps_from) / 1000.0) / duration  # load derivative
-    ticks_in_ms = rps_from / 1000.0
+    #der = ((rps_to - rps_from) / 1000.0) / duration  # load derivative
+    der = (rpms_to - rpms_from) / duration  # load derivative
+    #ticks_in_ms = rps_from / 1000.0
+    ticks_in_ms = rpms_from
     #if ticks_in_ms < 1:
     proficit = 1.0
     up = 0.0  # inaccuracy, because request in millisecond is int, func linear
@@ -140,7 +234,8 @@ def line_shema(rps_from, rps_to, duration, tick_offset):
                 yield t
                 #sys.stdout.write('+')
                 proficit -= 1.0
-        load = (rps_from / 1000.0) + der * t
+        #load = (rps_from / 1000.0) + der * t
+        load = rpms_from + der * t
 
         up = up + load - ticks_in_ms
         deficit = up - 1.0
@@ -257,3 +352,31 @@ def process_load_schema(schema, tick_offset):
             yield tick
     else:
         schema_format_err(schema, msg=', Can\'t determine schema type')
+
+
+def process_load_schema1(schema, tick_offset):
+    ''' Parse and validate load algorithm(load schema) and call appropriate
+    function.
+    Args:
+        schema: list, @see docs #FIXME: add docs link
+        tick_offset: int, previous time tick position
+
+    Returns:
+        runs appropriate ticks generator, which yields time ticks(int).
+    '''
+    s = parse_schema(schema)
+    if s['format'] == 'const':
+        #gen = const_shema(rps, duration, tick_offset)
+        gen = const_shema(s['rpms'], s['duration'], tick_offset)
+    elif s['format'] == 'step':
+        #gen = step_shema(rps_from, rps_to, step_dur, step_size, tick_offset)
+        gen = step_shema(s['rpms_from'], s['rpms_to'], s['step_dur'],\
+                         s['step_size'], tick_offset)
+    elif s['format'] == 'line':
+        #gen = line_shema(rps_from, rps_to, duration, tick_offset)
+        gen = line_shema(s['rpms_from'], s['rpms_to'], s['duration'],\
+                         tick_offset)
+    else:
+        schema_format_err(schema, msg=', schema pasrser malformed!')
+    for tick in gen:
+        yield tick
