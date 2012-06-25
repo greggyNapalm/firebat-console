@@ -1,6 +1,6 @@
-===========================================================
- Firebat console - Documentation and examples of usage
-===========================================================
+=======================================================
+ Firebat console - Документация и примеры использования
+=======================================================
 
 :Author: `Gregory Komissarov
  <https://github.com/greggyNapalm>`_
@@ -22,9 +22,11 @@
 .. toctree ::
     :maxdepth: 2
     
-    what-is-firebat-console
+    what-is-pahntom
     installation
     quickstart
     writing-a-firebat-conf
+    analyzing_result_data
     extending-firebat
+    examples
     changelog
