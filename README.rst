@@ -34,6 +34,9 @@ Test example
 Arguments
 ---------
 
+``-a AMMO_FILE, --ammo AMMO_FILE``
+  Path to ammo file, overlaps ``input_file`` config option
+
 ``-h, --help``
   Display args list
 
