@@ -11,7 +11,7 @@
 :Download: `Firebat console on GitHub
  <https://github.com/greggyNapalm/firebat_console>`_
 :Documentation: `PDF Documentation
- <http://media.readthedocs.org/pdf/phantom-doc/latest/phantom-doc.pdf>`_
+ <http://media.readthedocs.org/pdf/firebat-console-ru/latest/firebat-console-ru.pdf>`_
 :License: `BSD License
  <http://www.voidspace.org.uk/python/license.shtml>`_
 :Support: `Google Group
