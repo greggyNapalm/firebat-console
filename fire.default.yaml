@@ -1,5 +1,5 @@
 # Exmaple of firebat console tool config file
-# @see http://phantom-doc-ru.readthedocs.org/en/latest/index.html
+# @see http://firebat-console-ru.readthedocs.org/en/latest/writing-a-firebat-conf.html#fire-yaml
 title:
     task: 'SOMEPROJ-123'
     test_name: 'new version; load test; check cpu la'
@@ -14,7 +14,7 @@ fire:
         transport_proto: 'tcp'
         addr: '8.8.8.8'
         time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']
-        load: ['line(1,10,2m)', 'const(10,90m)']
+        load: [['line', 1000, 5000, '10m'], ['const', 5000, '30m'], ['step', 1, 51, 5, '2m']]
         input_file: 'simple_get1.ammo'
         input_format: 'plain'
         instances: 4000
@@ -33,7 +33,7 @@ fire:
         #addr: 'www.ya.ru:8080'
         #addr = b.g.f.c.d:8080
         time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']
-        load: ['line(1,10,2m)', 'const(10,90m)']
+        load: [['line', 1000, 5000, '10m'],]
         input_file: 'simple_get1.ammo'
         input_format: 'plain'
         instances: 4000
