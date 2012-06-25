@@ -22,7 +22,7 @@
 .. toctree ::
     :maxdepth: 2
     
-    what-is-pahntom
+    what-is-firebat
     installation
     quickstart
     writing-a-firebat-conf
