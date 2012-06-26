@@ -1,5 +1,5 @@
 setup_t module_setup = setup_module_t {
-    dir = {{ lib_dir }}
+    dir = "{{ lib_dir }}"
 	list = {
     {%- for module in modules %}
         {{ module }}
@@ -21,7 +21,7 @@ io_t benchmark_io = io_benchmark_t {
         }
         logger_t brief_logger = logger_brief_t {
             filename = "{{ phout_log.path }}"
-            time_format = {{ phout_log.format }}
+            time_format = {{ phout_log.time_format }}
             scheduler = main_scheduler
         }
         loggers = { brief_logger bencmark_logger }
@@ -54,7 +54,7 @@ io_t benchmark_io = io_benchmark_t {
         values = {{ '{' }}{% for t in time_periods %}{{ t }} {% endfor %}{{ '}' }}
     }
 
-    instances = {{ phantom_inst_num }}
+    instances = {{ instances }}
     method = stream_method
     times = list_times
     human_readable_report = false

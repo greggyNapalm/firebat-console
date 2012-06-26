@@ -64,7 +64,6 @@ def make_conf(fire_cfg, **kwargs):
         },
         'ammo_path': 'ammo.stpd',
         'target_timeout': '10s',
-        'instances_num': 1000,
         'stat_log_path': 'phantom_stat.log',
         'times': {
             'max': '1s',
