@@ -18,7 +18,7 @@ import argparse
 import logging
 import getpass
 import itertools
-from progressbar import Bar, ProgressBar, Percentage
+from progressbar import Bar, ProgressBar, Percentage, ETA
 
 import yaml
 
@@ -122,8 +122,8 @@ def main():
                 ammo_path = f['input_file']
 
         pbar_max = fire_duration(f)
-        pbar = ProgressBar(widgets=[Percentage(),
-                           Bar()], maxval=pbar_max).start()
+        widgets = [Percentage(), Bar(), ETA(),]
+        pbar = ProgressBar(widgets=widgets, maxval=pbar_max).start()
         job_path = __build_path(orig_wd, config, f, now)
         os.makedirs(job_path)
         os.chdir(job_path)
@@ -134,6 +134,7 @@ def main():
         logger.info('Processing fire: %s' % f['name'])
         logger.info('Ammo file: %s' % ammo_path)
         logger.info('Load schema: %s' % f['load'])
+        stpd_start = datetime.now()
         with open(ammo_path, 'r') as ammo_fh,\
             open('ammo.stpd', 'w+') as stpd_fh:
             f_path = os.path.abspath(ammo_fh.name)
@@ -180,6 +181,9 @@ def main():
                 offset = tick  # use last time tick as next load schema offset
             stpd_fh.write('0')  # close stpd file according format
         pbar.finish()
+        stpd_stop = datetime.now()
+        stpd_job_dur = stpd_stop - stpd_start
+        logger.info('ammo job takes: %s\n' % stpd_job_dur)
     logger.info('Job done.')
 
 if __name__ == '__main__':
