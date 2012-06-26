@@ -21,7 +21,7 @@ install_requirements = [
 with open("README.rst") as f:
     README = f.read()
 
-with open("CHANGES.rst") as f:
+with open("docs/changelog.rst") as f:
     CHANGES = f.read()
 
 setup(
