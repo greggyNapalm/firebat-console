@@ -8,13 +8,27 @@ Helper script for Phantom load tool.
     * generate phantom.conf
 """
 
-import os 
+import os
+import sys
 import re
 import socket
 import logging
 
 from jinja2 import Template
 import yaml
+
+
+def exit_err(msg):
+    logger = logging.getLogger('firebat.console')
+    if isinstance(msg, str):
+        msg = [msg, ]
+    for m in msg:
+        if not logger.handlers:
+            sys.stderr.write(m)
+        else:
+            logger.error(m)
+    sys.exit(1)
+
 
 def make_conf(fire_cfg, **kwargs):
     """ Generate ready to use phantom.conf
@@ -41,14 +55,14 @@ def make_conf(fire_cfg, **kwargs):
             'timeout_prec': 1,
         },
         'answ_log': {
-            'path': 'answ.txt', 
+            'path': 'answ.txt',
             'level': 'all',
         },
         'phout_log': {
             'path': 'phout.txt',
             'time_format': 'unix',
         },
-        'ammo_path': 'ammo.stpd', 
+        'ammo_path': 'ammo.stpd',
         'target_timeout': '10s',
         'instances_num': 1000,
         'stat_log_path': 'phantom_stat.log',
@@ -106,8 +120,21 @@ def make_conf(fire_cfg, **kwargs):
             phantom_cfg_tmlp = f.read()
             f.closed
     except IOError, e:
-        __msg = 'Can\'t open cfg template file: %s' %e
+        __msg = 'Can\'t open cfg template file: %s' % e
         logger.error(__msg)
         return False
     template = Template(phantom_cfg_tmlp)
     return template.render(conf)
+
+
+def get_defaults():
+    defaults_conf_path = os.path.dirname(__file__) + '/defaults.yaml'
+    try:
+        with open(defaults_conf_path, 'r') as conf_fh:
+            config = yaml.load(conf_fh)
+    except IOError, e:
+        exit_err('Could not read "%s": %s\n' % (defaults_conf_path, e))
+    except yaml.scanner.ScannerError, e:
+        exit_err('Could not parse *defaults* config file: %s\n%s' %\
+                (defaults_conf_path, e))
+    return config

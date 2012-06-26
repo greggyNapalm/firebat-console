@@ -25,7 +25,7 @@ fire:
         saveammo: 0
     
     -
-        name: 'app1.testarea.edu'
+        name: 'app2.testarea.edu'
         tags: ['SOMEPROJ', 'base-search', 'regression']
         # scheme
         network_proto: 'ipv4'
