@@ -8,6 +8,8 @@ fire_conf:
     input_format: 'plain'
     instances: 4000
     loop_ammo: True
+    cache_ammo: False
+    offset: 0
 
 fire_required_keys: ['name', 'addr', 'time_periods', 'load',]
 
