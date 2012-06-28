@@ -19,16 +19,17 @@ import argparse
 import logging
 import getpass
 import itertools
-import multiprocessing
+#import multiprocessing
+import commands
 from progressbar import Bar, ProgressBar, Percentage, ETA
 
 import yaml
+import simplejson as json
 
 from firebat.console.conf import make_conf, get_defaults
 from firebat.console.stepper import parse_ammo, process_load_schema,\
 fire_duration
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
-from firebat.console.launcher import run_supervisor
 
 
 def exit_err(msg):
@@ -56,6 +57,23 @@ def __build_path(orig_wd, config, fire, time):
     test_path += time.strftime('%Y%m%d-%H%M%S') + '/'
     test_path += fire['name']
     return test_path
+
+
+def start_daemon(fire):
+    pid_file = '/var/run/fire_%s.pid' % int(time.time())
+    executable = 'daemon_fire'
+    opts = {
+        'owner': 'Gregory Komissarov'
+    }
+    opts_str = json.dumps(opts) 
+    cmd = 'start-stop-daemon --start --quiet'
+    cmd += '--pidfile %s' % pid_file
+    cmd += '--chdir %s' % fire['wd']
+    cmd += '--exec %s -- %s' % (executable, opts_str)
+
+    status, text = commands.getstatusoutput(cmd)
+    print '---> DAEMON:\n %s\n%s' % (status, text)
+    return status
 
 
 def main():
@@ -199,12 +217,15 @@ def main():
         sys.exit(0)
     # ammo stpd and configs are ready, let's call launcher
     for f in config['fire']:
-        os.chdir(f['wd'])
-        #pp.pprint(f)
+        start_daemon(f)
+        #os.chdir(f['wd'])
+        #start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid 
+        #        >         --exec $DAEMON -- $DAEMON_OPTS
+        ##pp.pprint(f)
 
-        d = multiprocessing.Process(name='daemon', target=run_supervisor)
-        d.daemon = True
-        d.start()
+        #d = multiprocessing.Process(name='daemon', target=run_supervisor)
+        #d.daemon = True
+        #d.start()
 
         #run_supervisor()
 
