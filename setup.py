@@ -34,7 +34,10 @@ setup(
     license='BSD',
     url='https://github.com/greggyNapalm/firebat_console',
     keywords=['phantom', 'firebat'],
-    scripts=["bin/fire"],
+    scripts=[
+        "bin/fire",
+        "bin/daemon_fire",
+    ],
     packages=[
         'firebat',
         'firebat.console',
