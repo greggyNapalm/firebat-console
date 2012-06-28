@@ -21,7 +21,7 @@ Use pip and `vurtualev/virtualenvwrapper <http://docs.python-guide.org/en/latest
 
 ::
 
-    pip install -e git+git://github.com/greggyNapalm/firebat_console.git#egg=firebat-console
+    pip install -e git+git://github.com/greggyNapalm/firebat_console.git@production#egg=firebat-console
 
 
 Test example
