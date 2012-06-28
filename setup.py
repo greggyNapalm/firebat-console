@@ -16,6 +16,7 @@ install_requirements = [
     'PyYAML',
     'jinja2',
     'progressbar',
+    'simplejson',
 ]
 
 with open("README.rst") as f:
