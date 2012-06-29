@@ -16,6 +16,7 @@ install_requirements = [
     'PyYAML',
     'jinja2',
     'progressbar',
+    'simplejson',
 ]
 
 with open("README.rst") as f:
@@ -34,7 +35,10 @@ setup(
     license='BSD',
     url='https://github.com/greggyNapalm/firebat_console',
     keywords=['phantom', 'firebat'],
-    scripts=["bin/fire"],
+    scripts=[
+        "bin/fire",
+        "bin/daemon_fire",
+    ],
     packages=[
         'firebat',
         'firebat.console',
