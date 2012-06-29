@@ -37,6 +37,12 @@ Arguments
 ``-a AMMO_FILE, --ammo AMMO_FILE``
   Path to ammo file, overlaps ``input_file`` config option
 
+``-o , --only-prepare-stpd``
+  Only generate ammo stpd and exit
+
+``--list``
+  List details of currently running fires(jobs)
+
 ``-h, --help``
   Display args list
 
