@@ -16,8 +16,6 @@ import simplejson as json
 import datetime
 from subprocess import Popen, PIPE
 
-# const
-PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
 
 def get_running_jobs(pids_path='/tmp/fire/'):
     ''' Read jobs PID files, send signals to them, get current state and
@@ -34,10 +32,10 @@ def get_running_jobs(pids_path='/tmp/fire/'):
 
         state[pid_file]['proc_exist'] = False
         # check that job process exist.
-        if os.path.exists('/proc/%s' % state[pid_file]['pid'] ):
+        if os.path.exists('/proc/%s' % state[pid_file]['pid']):
             state[pid_file]['proc_exist'] = True
             # to get job state on file system, We need to send SIG
-            os.kill (state[pid_file]['pid'], signal.SIGUSR1)
+            os.kill(state[pid_file]['pid'], signal.SIGUSR1)
     if len(state) == 0:
         print 'No active fires found.'
         return
@@ -70,7 +68,7 @@ def get_running_jobs(pids_path='/tmp/fire/'):
             ]
             for chunk in lines:
                 print '%15s: %s' % chunk
- 
+
         except KeyError, e:
             print 'Can\'t found the key: %s' % e
 if __name__ == '__main__':

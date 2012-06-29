@@ -24,8 +24,8 @@ from string import maketrans
 from subprocess import Popen, PIPE
 
 # const
-PID_FILE='./fire.pid'
-PHANTOM_PID_FILE = './phantom.pid'
+#PID_FILE = './fire.pid'
+#PHANTOM_PID_FILE = './phantom.pid'
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
 
 
@@ -112,15 +112,16 @@ class FireStatus(object):
         file_path = '/tmp/%s.fire' % self.pid
         file(file_path, 'w').write(str(self.jsonify()))
         return file_path
-                
+
+
 def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
     if stamp:
         if not os.path.exists(pid_dir):
             os.makedirs(pid_dir)
         trantab = maketrans('.', '_')
-        time_str = "%.6f" % time.time() 
+        time_str = "%.6f" % time.time()
         time_str = time_str.translate(maketrans('.', '_'))
-        pid_file = pid_dir + name +'_%s.pid' % time_str
+        pid_file = pid_dir + name + '_%s.pid' % time_str
     else:
         pid_file = './' + name + '.pid'
 
@@ -128,14 +129,12 @@ def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
         pid_fh.write(pid)
     return pid_file
 
-#def drop_pid(name, pid,):
-#    file('./' + name + '.pid', 'w').write(pid)
 
 def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
     '''Create logger object.
     Args:
         log_path: str, path to new log file.
-        log_lvl: int, 
+        log_lvl: int
 
     Returns:
         logger obj
@@ -171,7 +170,7 @@ def run_phantom(status, sleep_time=1, logger=None):
         status.duration_update()
         status.log_mtime_update()
         retcode = job.poll()
-        if retcode is not None: # Process finished.
+        if retcode is not None:  # Process finished.
             status.retcode = retcode
             status.stdout = job.stdout.read()
             status.stderr = job.stderr.read()
@@ -179,14 +178,15 @@ def run_phantom(status, sleep_time=1, logger=None):
             logger.debug('phantom exited with retcode: %s' % retcode)
             #sys.stdout.write(str(status.jsonify()) + '\n')
             break
-        else: # No process is done, wait a bit and check again.
+        else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
+
 
 def run_supervisor():
     '''Shud be called in new daemon process to run and check phantom tool
     Args:
         log_path: str, path to new log file.
-        log_lvl: int, 
+        log_lvl: int
     '''
     # put PID file two times, one for debug
     pid_p = drop_pid('fire',
@@ -196,7 +196,6 @@ def run_supervisor():
     drop_pid('fire', str(os.getpid()), pid_dir='./')
     logger = get_logger()
 
-    
     opts = None
     if (len(sys.argv) > 1):
         opts = cPickle.loads(base64.b64decode(sys.argv[1]))
@@ -206,6 +205,7 @@ def run_supervisor():
     logger.info('PID: %s' % os.getpid())
 
     logger.info('Starting')
+
     def sig_usr1_handler(signum, frame):
         # TODO: Need to improve SIG handler.
         # see http://lcamtuf.coredump.cx/signals.txt
@@ -213,10 +213,10 @@ def run_supervisor():
         logger.debug('USR1 signal catched. See info in: %s' % file_path)
         return
 
-    signal.signal(signal.SIGUSR1, sig_usr1_handler )
+    signal.signal(signal.SIGUSR1, sig_usr1_handler)
     run_phantom(status, logger=logger)
-   
-    logger.debug(str(status.jsonify())) 
+
+    logger.debug(str(status.jsonify()))
     os.unlink(pid_p)
     logger.info('Exiting')
 
