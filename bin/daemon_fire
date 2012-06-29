@@ -9,12 +9,18 @@ Start new POSIX process for Phantom supervisor and monitor it.
 """
 
 import os
+import sys
 import time
 import signal
 import getpass
 import logging
 import simplejson as json
 import datetime
+import urllib
+import pickle
+import cPickle
+import base64
+from string import maketrans
 from subprocess import Popen, PIPE
 
 # const
@@ -31,6 +37,8 @@ class FireStatus(object):
         started_at: datetime obj, time when work was started.
         duration: int, time delta in seconds from start.
         uid: str, process owner.
+        owner: str, responsible person
+        total_dur: int, theoretical test self.duration in seconds
         wd: str, working directory if process.
         pid: int, supervisor PID.
         phantom_pid: int, Phantom process PID.
@@ -41,17 +49,20 @@ class FireStatus(object):
         stderr: str, Phantom process STDERR.
         eggs: An integer count of the eggs we have laid.
     """
-    def __init__(self, state='Starting', logger=None):
+    def __init__(self, opts, state='Starting', logger=None):
         if logger:
             self.logger = logger
         else:
             self.logger = get_logger()
+
+        self.pid = os.getpid()
         self.state = state
         self.started_at = datetime.datetime.now()
         self.duration = 0
         self.uid = getpass.getuser()
+        self.owner = opts.get('owner', 'uid')
+        self.total_dur = opts.get('total_dur', 0)
         self.wd = os.getcwd()
-        self.pid = os.getpgid(0)
         self.phantom_pid = None
         self.answ_mtime = None
         self.answ_mago = None
@@ -84,8 +95,10 @@ class FireStatus(object):
             'wd': self.wd,
             'pid': self.pid,
             'uid': self.uid,
+            'owner': self.owner,
             'phantom_pid': self.phantom_pid,
             'duration': self.duration,
+            'total_dur': self.total_dur,
             'answ_mtime': self.answ_mtime,
             'answ_mago': self.answ_mago,
             'retcode': self.retcode,
@@ -100,10 +113,25 @@ class FireStatus(object):
         file(file_path, 'w').write(str(self.jsonify()))
         return file_path
                 
-def drop_pid(name, pid):
-    file('./' + name + '.pid', 'w').write(pid)
+def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
+    if stamp:
+        if not os.path.exists(pid_dir):
+            os.makedirs(pid_dir)
+        trantab = maketrans('.', '_')
+        time_str = "%.6f" % time.time() 
+        time_str = time_str.translate(maketrans('.', '_'))
+        pid_file = pid_dir + name +'_%s.pid' % time_str
+    else:
+        pid_file = './' + name + '.pid'
 
-def get_logger(log_path='./fire_launcher.log', log_lvl=logging.DEBUG):
+    with open(pid_file, 'w') as pid_fh:
+        pid_fh.write(pid)
+    return pid_file
+
+#def drop_pid(name, pid,):
+#    file('./' + name + '.pid', 'w').write(pid)
+
+def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
     '''Create logger object.
     Args:
         log_path: str, path to new log file.
@@ -138,7 +166,7 @@ def run_phantom(status, sleep_time=1, logger=None):
     status.state = 'phantom launched'
     status.phantom_pid = job.pid
     status.state = 'phantom working'
-    drop_pid('phantom', str(job.pid))
+    drop_pid('phantom', str(os.getpid()), pid_dir='./')
     while 1:
         status.duration_update()
         status.log_mtime_update()
@@ -160,23 +188,36 @@ def run_supervisor():
         log_path: str, path to new log file.
         log_lvl: int, 
     '''
-    #drop_pid('fire_launcher', str(os.getpid()))
+    # put PID file two times, one for debug
+    pid_p = drop_pid('fire',
+                     str(os.getpid()),
+                     pid_dir='/tmp/fire/',
+                     stamp=True)
+    drop_pid('fire', str(os.getpid()), pid_dir='./')
     logger = get_logger()
-    #drop_pid('fire_launcher1', str(os.getpid()))
-    status = FireStatus(logger=logger)
+
+    
+    opts = None
+    if (len(sys.argv) > 1):
+        opts = cPickle.loads(base64.b64decode(sys.argv[1]))
+
+    status = FireStatus(opts, logger=logger)
+    logger.info('PID file: %s' % pid_p)
+    logger.info('PID: %s' % os.getpid())
 
     logger.info('Starting')
     def sig_usr1_handler(signum, frame):
+        # TODO: Need to improve SIG handler.
+        # see http://lcamtuf.coredump.cx/signals.txt
         file_path = status.put()
         logger.debug('USR1 signal catched. See info in: %s' % file_path)
         return
 
     signal.signal(signal.SIGUSR1, sig_usr1_handler )
     run_phantom(status, logger=logger)
-    #time.sleep(7)
-    #status.log_mtime_update()
    
     logger.debug(str(status.jsonify())) 
+    os.unlink(pid_p)
     logger.info('Exiting')
 
 if __name__ == '__main__':

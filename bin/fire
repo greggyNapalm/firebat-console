@@ -13,14 +13,16 @@ Helper script for Phantom load tool.
 
 import os
 import sys
-#from datetime import date, datetime
 import datetime
 import argparse
 import logging
 import getpass
-import itertools
-#import multiprocessing
+import cPickle
+import time
 import commands
+import copy
+import base64
+from string import maketrans
 from progressbar import Bar, ProgressBar, Percentage, ETA
 
 import yaml
@@ -30,6 +32,7 @@ from firebat.console.conf import make_conf, get_defaults
 from firebat.console.stepper import parse_ammo, process_load_schema,\
 fire_duration
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
+from firebat.console.cmd import get_running_jobs
 
 
 def exit_err(msg):
@@ -44,6 +47,8 @@ def exit_err(msg):
 
 
 def validate_dict(d, req):
+    ''' Check that all keys from required list present in tested dict.
+    '''
     present_keys = d.keys()
     diff = [val for val in req if val not in present_keys]
     if len(diff) != 0:
@@ -60,28 +65,34 @@ def __build_path(orig_wd, config, fire, time):
 
 
 def start_daemon(fire):
-    pid_file = '/var/run/fire_%s.pid' % int(time.time())
-    executable = 'daemon_fire'
+    ''' Build cmd string for system start-stop-daemon tool and call it.
+    Args:
+        fire: dict, fire from job configuration.
+
+    Returns:
+        status_d: int, command exit code.
+        text_d: str, command stdout.
+    '''
+
+    exec_name = 'daemon_fire'
+    status, exec_path = commands.getstatusoutput('which %s' % exec_name)
+    if status != 0:
+        raise ValueError('Can\'t find executable: %s' % exec_name)
     opts = {
-        'owner': 'Gregory Komissarov'
+        'owner': fire.get('owner', 'uid'),
+        'total_dur': fire['total_dur'] / 1000,  # in seconds
     }
-    opts_str = json.dumps(opts) 
-    cmd = 'start-stop-daemon --start --quiet'
-    cmd += '--pidfile %s' % pid_file
-    cmd += '--chdir %s' % fire['wd']
-    cmd += '--exec %s -- %s' % (executable, opts_str)
+    opts_str = base64.b64encode(cPickle.dumps(opts))
+    cmd = 'start-stop-daemon --start --quiet --background'
+    #cmd += ' --make-pidfile %s' % pid_file
+    cmd += ' --pidfile /None_existent'
+    cmd += ' --chdir %s' % fire['wd']
+    cmd += ' --exec %s -- %s' % (exec_path, opts_str)
 
-    status, text = commands.getstatusoutput(cmd)
-    print '---> DAEMON:\n %s\n%s' % (status, text)
-    return status
+    status_d, text_d = commands.getstatusoutput(cmd)
+    return status_d, text_d
 
-
-def main():
-    #d
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    #d
-    defaults = get_defaults()
+def get_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', nargs=1, action='store',
                     dest='config_file', default='./fire.yaml',
@@ -95,13 +106,17 @@ def main():
                     dest='stpd_ammo_only', default=False,
                     help='Only generate ammo stpd and exit',)
 
+    parser.add_argument('--list', action="store_const", const=True,
+            help='List details of currently running fires.', dest='list_only')
+
     parser.add_argument('--debug', action="store_const", const=True,
             help='Whether to show debug msg in STDOUT', dest='debug')
 
     parser.add_argument('--version', action='version',
                     version='%(prog)s 0.0.1')
-    args = parser.parse_args()
+    return parser
 
+def get_logger(args):
     logger = logging.getLogger('firebat.console')
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
@@ -112,7 +127,19 @@ def main():
     formatter = logging.Formatter('%(asctime)s  %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+    return logger
 
+
+def main():
+    defaults = get_defaults()
+    args = get_arg_parser().parse_args()
+    if args.list_only:
+        get_running_jobs()
+        sys.exit(0)
+
+    logger = get_logger(args)
+
+    # load job configuration
     try:
         with open(args.config_file, 'r') as conf_fh:
             config = yaml.load(conf_fh)
@@ -130,6 +157,7 @@ def main():
     ammo_cache = {}
     orig_wd = os.getcwd()
     ammo_from_arg = False
+    fires = []
     for idx, f_orig in enumerate(config['fire']):
         f = defaults['fire_conf']
         f.update(f_orig)
@@ -137,7 +165,6 @@ def main():
             validate_dict(f, defaults['fire_required_keys'])
         except ValueError, e:
             exit_err('Error in parsing fire conf:\n%s' % e)
-        config['fire'][idx] = f
 
         # get absolute ammo path before chdir
         if not ammo_from_arg:
@@ -147,11 +174,15 @@ def main():
             else:
                 ammo_path = f['input_file']
 
-        pbar_max = fire_duration(f)
+        total_dur = fire_duration(f)
+        f['total_dur'] = total_dur
+        pbar_max = total_dur
         widgets = [Percentage(), Bar(), ETA(),]
         pbar = ProgressBar(widgets=widgets, maxval=pbar_max).start()
+
         job_path = __build_path(orig_wd, config, f, now)
-        config['fire'][idx]['wd'] = job_path
+        f['wd'] = job_path
+        config['fire'][idx] = copy.copy(f)
         os.makedirs(job_path)
         os.chdir(job_path)
 
@@ -165,34 +196,19 @@ def main():
         with open(ammo_path, 'r') as ammo_fh,\
             open('ammo.stpd', 'w+') as stpd_fh:
             f_path = os.path.abspath(ammo_fh.name)
-            if f['cache_ammo']:
-                ammo_cache[f_path] = {'chunks': [], }
             ammos = parse_ammo(ammo_fh)
             offset = f.get('offset', 0)
             for schema in f['load']:
                 for tick in process_load_schema(schema, offset):
                     try:
-                        try:
-                            m_line, chunk = ammo_cache[f_path]['cycle'].next()
-                            #sys.stdout.write('-->Cache, baybe!<--')
-                        except KeyError:
-                            m_line, chunk = ammos.next()
-                            if f_path in ammo_cache:
-                                ammo_cache[f_path]['chunks'].append(\
-                                        (m_line, chunk))
+                        m_line, chunk = ammos.next()
                     except StopIteration:
                         # chunks in ammo file run out
                         if f['loop_ammo']:
-                            # need to restart requests chunks generation or
-                            # enable cashe if it present.
-                            if f_path in ammo_cache:
-                                if not 'cycle' in ammo_cache[f_path]:
-                                    ammo_cache[f_path]['cycle'] =\
-                                    itertools.cycle(ammo_cache[f_path]['chunks'])
-                            else:
-                                ammo_fh.seek(0)
-                                ammos = parse_ammo(ammo_fh)
-                                m_line, chunk = ammos.next()
+                            # need to restart requests chunks generation
+                            ammo_fh.seek(0)
+                            ammos = parse_ammo(ammo_fh)
+                            m_line, chunk = ammos.next()
                         else:
                             stpd_fh.write('0')
                             msg = [
@@ -201,7 +217,8 @@ def main():
                                 'File: %s' % f['input_file'],
                                 'Schema: %s' % schema,
                             ]
-                            exit_err(msg)
+                            logger.info(msg)
+                            break
                     req_stpd = m_line % tick + chunk + '\n'
                     stpd_fh.write(req_stpd)
                     pbar.update(tick)
@@ -213,22 +230,16 @@ def main():
         logger.info('ammo job takes: %s\n' % stpd_job_dur)
     logger.info('stpd generation finished.')
 
-    if args.stpd_ammo_only:
+    if args.stpd_ammo_only:  # generation only, We no need to run tests
         sys.exit(0)
-    # ammo stpd and configs are ready, let's call launcher
+
+    # ammo stpd and configs are ready, let's start Phantom supervisor daemon.
     for f in config['fire']:
-        start_daemon(f)
-        #os.chdir(f['wd'])
-        #start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid 
-        #        >         --exec $DAEMON -- $DAEMON_OPTS
-        ##pp.pprint(f)
-
-        #d = multiprocessing.Process(name='daemon', target=run_supervisor)
-        #d.daemon = True
-        #d.start()
-
-        #run_supervisor()
-
+        retcode, out = start_daemon(f)
+        if retcode == 0:
+            logger.info('Fire %s launched successfully.' % f['name'])
+        else:
+            logger.error('Fire start fails: %s. Exit code: %s' % (out, retcode))
 
 if __name__ == '__main__':
     main()

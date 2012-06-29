@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+
+"""
+firebat.cmd
+~~~~~~~~~~~~~~~
+
+Command line interface for Firebat.
+"""
+
+import os
+import time
+import signal
+import getpass
+import logging
+import simplejson as json
+import datetime
+from subprocess import Popen, PIPE
+
+# const
+PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
+
+def get_running_jobs(pids_path='/tmp/fire/'):
+    ''' Read jobs PID files, send signals to them, get current state and
+    display it to user.
+    Args:
+        pids_path: str, where to find the PID files.
+    '''
+
+    state = {}
+    for pid_file in os.listdir(pids_path):
+        state[pid_file] = {}
+        with open(pids_path + pid_file, "r") as pid_fh:
+            state[pid_file]['pid'] = int(pid_fh.read())
+
+        state[pid_file]['proc_exist'] = False
+        # check that job process exist.
+        if os.path.exists('/proc/%s' % state[pid_file]['pid'] ):
+            state[pid_file]['proc_exist'] = True
+            # to get job state on file system, We need to send SIG
+            os.kill (state[pid_file]['pid'], signal.SIGUSR1)
+    if len(state) == 0:
+        print 'No active fires found.'
+        return
+
+    for key, pid_file in state.iteritems():
+        try:
+            path = '/tmp/%s.fire' % pid_file['pid']
+            with open(path) as state_fh:
+                state_json = state_fh.read()
+                pid_file['state'] = json.loads(state_json)
+        except IOError as e:
+            print 'Can\'t read state dump from: %s' % path
+        except json.decoder.JSONDecodeError, e:
+            print 'Can\'t parse status data geted from: %s' % path
+
+    for key, pid in state.iteritems():
+        print '\n', key, '\n', len(key) * '-'
+        try:
+            lines = [
+                ('state', pid['state']['state']),
+                ('duration', pid['state']['duration']),
+                ('total duration', pid['state']['total_dur']),
+                ('owner', pid['state']['owner']),
+                ('uid', pid['state']['uid']),
+                ('fire PID', pid['pid']),
+                ('phantom PID', pid['state']['phantom_pid']),
+                ('log mtime', pid['state']['answ_mtime']),
+                ('log last mod', pid['state']['answ_mago']),
+                ('wd', pid['state']['wd'])
+            ]
+            for chunk in lines:
+                print '%15s: %s' % chunk
+ 
+        except KeyError, e:
+            print 'Can\'t found the key: %s' % e
+if __name__ == '__main__':
+    check_existing()
