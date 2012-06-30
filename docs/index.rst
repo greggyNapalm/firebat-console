@@ -23,6 +23,7 @@
     :maxdepth: 2
     
     what-is-firebat
+    design
     installation
     quickstart
     writing-a-firebat-conf
