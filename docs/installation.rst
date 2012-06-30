@@ -14,7 +14,7 @@ Firebat console дистрибутируется как python модуль, р�
 
 ::
 
-    pip install -e git+git://github.com/greggyNapalm/firebat_console.git#egg=firebat-console
+    pip install -e git+git://github.com/greggyNapalm/firebat_console.git@production#egg=firebat-console
 
 3. Настроить ОС.
 ----------------
