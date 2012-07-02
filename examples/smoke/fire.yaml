@@ -1,0 +1,17 @@
+# Exmaple of firebat console tool config file
+# @see http://firebat-console-ru.readthedocs.org/en/latest/writing-a-firebat-conf.html#fire-yaml
+title:
+    task: 'TESTPROJ-123'
+    test_name: 'firebat console demonstration; localhost; HTTP'
+    test_dsc: 'Find a bug? Want a feature? Submit an issue. Patches welcome!'
+
+fire:
+    -
+        name: 'local_http'
+        tag: ['TESTPROJ', 'demo', 'local']
+        # scheme
+        addr: '127.0.0.1:8000'
+        time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']
+        load: [['line', 1, 100, '1m'], ['const', 100, '3m'], ['step', 100, 150, 5, '1m']]
+        input_file: '/full/path/to/simple.ammo'
+# vim:set ft=yaml:

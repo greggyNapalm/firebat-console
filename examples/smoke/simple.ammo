@@ -1,0 +1,15 @@
+140
+GET /fire.yaml HTTP/1.1
+Host: target.changeme.com
+User-Agent: phantom v.14
+Referer: https://github.com/greggyNapalm/ammo
+Accept: */*
+
+142
+GET /simple.ammo HTTP/1.1
+Host: target.changeme.com
+User-Agent: phantom v.14
+Referer: https://github.com/greggyNapalm/ammo
+Accept: */*
+
+0
