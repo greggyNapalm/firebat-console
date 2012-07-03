@@ -39,7 +39,7 @@ def validate_duration(duration):
         bool, true if short notation is valid
     '''
     trans_table = string.maketrans('', '')
-    allowed = string.digits + 'smh'
+    allowed = string.digits + 'mh'
     return not duration.translate(trans_table, allowed)
 
 

@@ -1,0 +1,44 @@
+{
+    "load": [
+        [
+            "line",
+            1,
+            10,
+            "2m"
+        ]
+    ],
+    "wd": "/path/to/test/working/directory",
+    "input_format": "plain",
+    "input_file": "/path/to/ammo/file/test.ammo",
+    "time_periods": [
+        10,
+        45,
+        50,
+        100,
+        150,
+        300,
+        500,
+        "1s",
+        1500,
+        "2s",
+        "3s",
+        "10s"
+    ],
+    "writelog": 1,
+    "network_proto": "ipv4",
+    "instances": 4000,
+    "transport_proto": "tcp",
+    "offset": 0,
+    "name": "app1",
+    "addr": "127.0.0.1:80",
+    "total_dur": 120000,
+    "loop_ammo": true,
+    "tag": [
+        "SOMEPROJ",
+        "base-search",
+        "regression"
+    ],
+    "savelog": 0,
+    "saveammo": 0,
+    "cache_ammo": false
+}
