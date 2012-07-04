@@ -12,6 +12,8 @@ try:
 except ImportError:
         from distutils.core import setup
 
+from firebat import __version__
+
 install_requirements = [
     'PyYAML',
     'jinja2',
@@ -27,7 +29,7 @@ with open("docs/changelog.rst") as f:
 
 setup(
     name='firebat-console',
-    version='0.0.2',
+    version=__version__,
     author='Gregory Komissarov',
     author_email='gregory.komissarov@gmail.com',
     description='Console helpers for Phantom load tool',
