@@ -27,7 +27,7 @@ with open("docs/changelog.rst") as f:
 
 setup(
     name='firebat-console',
-    version='0.0.1',
+    version='0.0.2',
     author='Gregory Komissarov',
     author_email='gregory.komissarov@gmail.com',
     description='Console helpers for Phantom load tool',

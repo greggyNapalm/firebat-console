@@ -24,6 +24,12 @@ def get_running_jobs(pids_path='/tmp/fire/'):
         pids_path: str, where to find the PID files.
     '''
 
+    no_data_msg = 'No active fires found.'
+
+    if not os.path.exists(pids_path):
+        print no_data_msg
+        return
+
     state = {}
     for pid_file in os.listdir(pids_path):
         state[pid_file] = {}
@@ -37,7 +43,7 @@ def get_running_jobs(pids_path='/tmp/fire/'):
             # to get job state on file system, We need to send SIG
             os.kill(state[pid_file]['pid'], signal.SIGUSR1)
     if len(state) == 0:
-        print 'No active fires found.'
+        print no_data_msg
         return
 
     for key, pid_file in state.iteritems():
