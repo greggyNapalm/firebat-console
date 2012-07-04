@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Test Result</title>
+    <title>Results</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -55,7 +55,7 @@
 
       <h1>Результаты теста</h1>
       <p>Ниже преведены графики такие-то.</p>
-      <div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+      <div id="resp_time_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 
     </div> <!-- /container -->
 
@@ -75,185 +75,20 @@
     <script src="./js/bootstrap-collapse.js"></script>
     <script src="./js/bootstrap-carousel.js"></script>
     <script src="./js/bootstrap-typeahead.js"></script>
+    <!-- newest version may be buggy
+    -->
     <script src="./js/highcharts/highcharts.js"></script>
     <script src="./js/highcharts/modules/exporting.js"></script>
+    <script src="./js/firebat/init.js"></script>
+    <script src="./js/firebat/data_series.js"></script>
+    <!--
+    <script src="//code.highcharts.com/2.1.9/highcharts.js"></script>
+    -->
 
 <script type="text/javascript">
 $(function () {
-    var chart;
     $(document).ready(function() {
-        chart = new Highcharts.Chart({
-            chart: {
-                renderTo: 'container',
-                zoomType: 'x',
-                animation: false,
-                backgroundColor: '#f9f9f9',
-                type: 'areaspline',
-            },
-            title: {
-                text: 'Cхема нагрузки и распределение квантилей времён ответов'
-            },
-            subtitle: {
-                text: 'Тут нужен какой-либо текст?'
-            },
-            xAxis: [{
-                type: 'datetime',
-            }],
-            yAxis: [{ // Primary yAxis
-                labels: {
-                    formatter: function() {
-                        return this.value +'ms';
-                    },
-                    style: {
-                        color: '#89A54E'
-                    }
-                },
-                title: {
-                    text: 'Responce Time',
-                    style: {
-                        color: '#89A54E'
-                    }
-                }
-            }, { // Secondary yAxis
-                title: {
-                    text: 'Load',
-                    style: {
-                        color: '#4572A7'
-                    }
-                },
-                labels: {
-                    formatter: function() {
-                        return this.value +'rps';
-                    },
-                    style: {
-                        color: '#4572A7'
-                    }
-                },
-                opposite: true
-            }],
-            //PlotOptions = new Core.PlotOptions.PlotOptionsAreaSpline { stacking = Stackting.normal, fillOpacity = 0.3 };
-            //plotOptions: {
-            //        series: {
-            //            stacking: 'normal'
-            //        },
-            //},
-            tooltip: {
-                backgroundColor: 'white',
-                //backgroundColor: '#CCCCCC',
-                borderRadius: '10',
-                borderColor: 'black',
-                borderWidth: 2,
-                //backgroundColor: 'gray',
-                shared: true,
-                crosshairs: {
-                    color: 'black',
-                    dashStyle: 'solid',
-                },
-                formatter: function() {
-                    return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + this.points[2].y + ' rps';
-                },
-            },
-            /*
-            rps
-            100%
-            99%
-            98%
-            95%
-            90%
-            85%
-            80%
-            75%
-            50%
-            */
-            series: [{
-                name: '95%',
-                color: '#E0F670',
-                type: 'area',
-                marker: {
-                  enabled: false
-                },
-                data: [
-                    [1340795703000, 80],
-                    [1340795704000, 120],
-                    [1340795705000, 160],
-                    [1340795706000, 160],
-                    [1340795707000, 160],
-                    [1340795708000, 400],
-                    [1340795709000, 450],
-                    [1340795710000, 460],
-                    [1340795711000, 800],
-                    [1340795712000, 840],
-                    [1340795713000, 850],
-                    [1340795714000, 860],
-                ]
-
-            }, {
-                name: '98%',
-                color: '#71B56A',
-                type: 'area',
-                marker: {
-                  enabled: false
-                },
-                data: [
-                    [1340795703000, 100],
-                    [1340795704000, 150],
-                    [1340795705000, 200],
-                    [1340795706000, 200],
-                    [1340795707000, 200],
-                    [1340795708000, 500],
-                    [1340795709000, 550],
-                    [1340795710000, 560],
-                    [1340795711000, 1000],
-                    [1340795712000, 1040],
-                    [1340795713000, 1050],
-                    [1340795714000, 1060],
-                ]
-            }, {
-                name: '99%',
-                color: '#BEC3D1',
-                type: 'area',
-                marker: {
-                  enabled: false
-                },
-                data: [
-                    [1340795703000, 115],
-                    [1340795704000, 180],
-                    [1340795705000, 215],
-                    [1340795706000, 225],
-                    [1340795707000, 235],
-                    [1340795708000, 515],
-                    [1340795709000, 565],
-                    [1340795710000, 1300],
-                    [1340795711000, 1400],
-                    [1340795712000, 1500],
-                    [1340795713000, 1450],
-                    [1340795714000, 1410],
-                ]
-            }, {
-                name: 'rps',
-                legendIndex: 0,
-                color: '#990000',
-                type: 'line',
-                marker: {
-                  enabled: false
-                },
-                yAxis: 1,
-                data: [
-                    [1340795703000, 1],
-                    [1340795704000, 2],
-                    [1340795705000, 3],
-                    [1340795706000, 4],
-                    [1340795707000, 5],
-                    [1340795708000, 6],
-                    [1340795709000, 7],
-                    [1340795710000, 7],
-                    [1340795711000, 7],
-                    [1340795712000, 7],
-                    [1340795713000, 7],
-                    [1340795714000, 7],
-                ]
-            }]
-        });
+        resp_time_chart('resp_time_chart', data_series)
     });
 });
         </script>
