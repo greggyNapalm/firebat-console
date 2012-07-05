@@ -5,6 +5,12 @@ function resp_time_chart1(var1,var2)
 }
 
 function resp_time_chart(container_id, data_series) {
+    Highcharts.setOptions({
+        global: {
+            useUTC: false
+        }
+    });
+
     var chart;
     chart = new Highcharts.Chart({
         chart: {
@@ -26,7 +32,7 @@ function resp_time_chart(container_id, data_series) {
         yAxis: [{ // Primary yAxis
             labels: {
                 formatter: function() {
-                    return this.value +'ms';
+                    return this.value +' ms';
                 },
                 style: {
                     color: '#89A54E'
@@ -47,7 +53,7 @@ function resp_time_chart(container_id, data_series) {
             },
             labels: {
                 formatter: function() {
-                    return this.value +'rps';
+                    return this.value +' rps';
                 },
                 style: {
                     color: '#4572A7'
