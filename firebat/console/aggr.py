@@ -15,7 +15,11 @@ import getpass
 import logging
 import simplejson as json
 import datetime
+import bisect
+import rbtree
 from subprocess import Popen, PIPE
+
+from jinja2 import Template
 try:
     from http_parser.parser import HttpParser
 except ImportError:
@@ -54,36 +58,52 @@ class Statistic(object):
         #         self.result[c])
 
 
-def answ_parser(answ_fh):
-    while 1:
-        l = answ_fh.readline()
-        if not l:
-            break
+class phout_stat(object):
+    def __init__(self):
+        self.parts = [100, 99, 98, 95, 90, 85, 80, 75, 50]
+        self.resp = {}
+        self.series = {
+            'rps': '',
+            '100': '',
+            '99': '',
+            '98': '',
+            '95': '',
+            '90': '',
+            '85': '',
+            '80': '',
+            '75': '',
+            '50': '',
+        }
+
+    def add_resp(self, epoch, rtt):
         try:
-            req_size, resp_size, rtt_ms, resp_mks, errno = l.rstrip().split()
-        except ValueError:
-            print 'Malformed meta line in answ file.'
-        req_plain = answ_fh.read(int(req_size))
-        answ_fh.read(1)  # delimiter line
-        resp_plain = answ_fh.read(int(resp_size))
-        #answ_fh.read(1)  # delimiter line
-        #print resp_plain, '\n', '1' * 20
-        yield resp_plain, req_size
+            self.resp[epoch]['rtt'].append(rtt)
+        except KeyError:
+            self.resp[epoch] = {
+                'percentiles': [],
+                'rtt': [],
+                'rps': 0,
+            }
+            self.resp[epoch]['rtt'].append(rtt)
 
-
-def parse_answ(answ_fh):
-    stat = Statistic()
-    for resp, size in answ_parser(answ_fh):
-        p = HttpParser()
-        p.execute(resp, int(size))
-        stat.add_responce(p, resp)
-    stat.represent()
-
+    def calc_percentiles(self):
+        for idx, r in self.resp.iteritems():
+            r['rtt'].sort()
+            r['rps'] = len(r['rtt'])
+            for p in self.parts:
+                if p == 100:
+                    elem_no = -1
+                else:
+                    elem_no = int(r['rps'] *(p / 100.0))
+                resp_time = r['rtt'][elem_no]
+                r['percentiles'].append(resp_time)
+                self.series[str(p)] += '[%s, %s],\n' % (idx, resp_time)
+            self.series['rps'] += '[%s, %s],\n' % (idx, r['rps'])
+                
 
 def phout(phout_fh):
-    result = []
+    p_stat = phout_stat()
     current_epoch = 0
-    rps = 0
     for l in phout_fh:
         l_spltd = l.split()
         # in phantom v.14 line have 12 fields, @see:
@@ -93,15 +113,30 @@ def phout(phout_fh):
         epoch, tag, rtt, con_ms, send_ms, proc_ms, resp_ms, phantom_exec, req_byte, resp_byte, errno, http_status = l_spltd
         epoch = int(epoch.split('.')[0])
         if epoch > current_epoch:
-            result.append((current_epoch, rps))
             current_epoch = epoch
-            rps = 0
         else:
-            rps += 1
+            p_stat.add_resp(int(current_epoch), int(rtt))
 
-        #print l.rstrip()
-        #print l_spltd
-    print result
+    p_stat.calc_percentiles()
+    #pp.pprint(p_stat.series)
+    #print p_stat.series['rps']
+
+    header = 'data_series = [\n'
+    footer = ']'
+    with open('data_series.js', 'w+') as ds_fh:
+        ds_fh.write(header)
+        p_stat.series['101'] = p_stat.series.pop('rps')
+        for key in sorted(p_stat.series.iterkeys(), key=lambda key: int(key), reverse=True):
+            if key == '101':
+                name = 'rps'
+            else:
+                name = key
+            ds_fh.write('{\nname: \'%s\',\ndata: [\n' % name)
+            ds_fh.write(p_stat.series[key])
+            ds_fh.write(']\n}, ')
+        ds_fh.write(footer)
+
+
 
 if __name__ == '__main__':
     parse_answ()
