@@ -189,6 +189,10 @@ def main():
         os.makedirs(job_path)
         os.chdir(job_path)
 
+        fire_json = json.dumps(config['fire'][idx], indent=4 * ' ')
+        with open('.fire.json', 'w+') as fire_fh:
+            fire_fh.write(fire_json)
+
         with open('phantom.conf', 'w+') as cfg_fh:
             cfg_fh.write(make_conf(f))
 
