@@ -22,7 +22,7 @@
     <![endif]-->
 
     <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="../assets/ico/favicon.ico">
+    <link rel="shortcut icon" href="./img/favicon.ico">
     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
@@ -43,7 +43,7 @@
           <div class="nav-collapse">
             <ul class="nav">
               <li class="active"><a href="#">Home</a></li>
-              <li><a href="#details">Details</a></li>
+              <li><a href="#time_research">Time Research</a></li>
               <li><a href="#about">About</a></li>
             </ul>
           </div><!--/.nav-collapse -->
@@ -53,9 +53,15 @@
 
     <div class="container">
 
-      <h1>Результаты теста</h1>
+      <h1>Fire result</h1>
+      <!--
       <p>Ниже преведены графики такие-то.</p>
+      -->
       <div id="resp_time_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+      <br>
+      <div id="status_codes_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+      <br>
+      <div id="errno_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 
     </div> <!-- /container -->
 
@@ -88,7 +94,32 @@
 <script type="text/javascript">
 $(function () {
     $(document).ready(function() {
-        resp_time_chart('resp_time_chart', data_series)
+        //resp_time_chart('resp_time_chart', resp_percentiles_series)
+        resp_opts = {
+            'title': 'Responce time percentiles',
+            'yTitle': 'Responce time',
+            'postfix': ' ms',
+        };
+        resp_percentiles_series.push(rps_series)
+        base_chart('resp_time_chart', resp_percentiles_series, resp_perc_parser, resp_opts);
+
+        status_opts = {
+            'title': 'HTTP status codes',
+            'yTitle': 'Number',
+            'postfix': '',
+            'info_link': 'http://httpstatus.es/'
+        };
+        status_codes_series.push(rps_series)
+        base_chart('status_codes_chart', status_codes_series, status_codes_parser, status_opts);
+
+        errno_opts = {
+            'title': 'Errno from TCP socket',
+            'yTitle': 'Number',
+            'postfix': '',
+            'info_link': 'https://gist.github.com/2413028'
+        };
+        errno_series.push(rps_series)
+        base_chart('errno_chart', errno_series, errno_parser, errno_opts);
     });
 });
         </script>
