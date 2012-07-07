@@ -149,6 +149,25 @@ def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
     logger.addHandler(fh)
     return logger
 
+def update_fire(status, json_path='.fire.json', logger=None):
+    new_path = '.fire_up.json'
+    try:
+        with open(json_path, "r") as fire_fh:
+            fire = json.loads(fire_fh.read())
+    except IOError, e:
+        logger.error('Could not read "%s": %s\n' % (json_path, e))
+    except JSONDecodeError, e:
+        logger.error('Could not parse fire config file: %s\n%s' % (json_path, e))
+    fire['owner'] = status.owner
+    fire['uid'] = status.uid
+    fire['total_dur'] = status.total_dur
+    fire['started_at'] = status.started_at.strftime('%s')
+    new_cfg = json.dumps(fire)
+    try:
+        with open(new_path, "w+") as fire_fh:
+            fire_fh.write(new_cfg)
+    except IOError, e:
+        logger.error('Could not write "%s": %s\n' % (new_path, e))
 
 def run_phantom(status, sleep_time=1, logger=None):
     '''Create new POSIX process and wait until exit.
@@ -166,6 +185,7 @@ def run_phantom(status, sleep_time=1, logger=None):
     status.phantom_pid = job.pid
     status.state = 'phantom working'
     drop_pid('phantom', str(os.getpid()), pid_dir='./')
+    update_fire(status, json_path='.fire.json', logger=logger)
     while 1:
         status.duration_update()
         status.log_mtime_update()
