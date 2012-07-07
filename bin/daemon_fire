@@ -150,6 +150,16 @@ def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
     return logger
 
 def update_fire(status, json_path='.fire.json', logger=None):
+    '''Update fire dict according to status object.
+    Args:
+        status: obj, current status object.
+        json_path: str, file path fire dict shud be readed from.
+        logger: logger object.
+
+    Returns:
+        put new JSON file to fire working directory.
+    '''
+
     new_path = '.fire_up.json'
     try:
         with open(json_path, "r") as fire_fh:
@@ -162,7 +172,7 @@ def update_fire(status, json_path='.fire.json', logger=None):
     fire['uid'] = status.uid
     fire['total_dur'] = status.total_dur
     fire['started_at'] = status.started_at.strftime('%s')
-    new_cfg = json.dumps(fire)
+    new_cfg = json.dumps(fire, indent=4 * ' ')
     try:
         with open(new_path, "w+") as fire_fh:
             fire_fh.write(new_cfg)
