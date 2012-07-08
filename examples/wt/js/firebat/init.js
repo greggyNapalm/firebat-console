@@ -276,7 +276,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
                 dashStyle: 'solid',
             },
             formatter: function() {
-                console.info(this.y)
+                //console.info(this.y)
                 return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + this.points[2].y + ' rps';
             },
         },

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Results</title>
+    <title>Time Research</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -42,9 +42,9 @@
           <a class="brand" href="#">Firebat console</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
+              <li><a href="index.html">Home</a></li>
               <li><a href="time_research.html">Time Research</a></li>
-              <li><a href="about.html">About</a></li>
+              <li class="active"><a href="#about">About</a></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -53,18 +53,33 @@
 
     <div class="container">
 
-      <h1>Fire result</h1>
+      <h1>About</h1>
       <!--
       <p>Ниже преведены графики такие-то.</p>
       -->
-      <div id="resp_time_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
-      <br>
-      <div id="status_codes_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
-      <br>
-      <div id="errno_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
-
     </div> <!-- /container -->
 
+    <div class="bs-links">
+        <ul class="quick-links">
+          <li><a href="https://github.com/greggyNapalm/firebat_console/issues">Submit issues</a></li>
+          <li><a href="http://firebat-console.readthedocs.org/en/latest">Read the docs</a></li>
+          <li><a href="http://firebat-console-ru.readthedocs.org/en/latest">Russian documentation is also available</a></li>
+        </ul>
+        <ul class="quick-links">
+          <li>
+            <iframe class="github-btn" src="http://markdotto.github.com/github-buttons/github-btn.html?user=greggyNapalm&repo=firebat_console&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="112px" height="20px"></iframe>
+          </li>
+          <li>
+            <iframe class="github-btn" src="http://markdotto.github.com/github-buttons/github-btn.html?user=greggyNapalm&repo=firebat_console&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="98px" height="20px"></iframe>
+          </li>
+          <li class="follow-btn">
+            <a href="https://twitter.com/Firebat_tool" class="twitter-follow-button" data-link-color="#0069D6" data-show-count="true">Follow @Firebat_tool</a>
+          </li>
+          <li class="tweet-btn">
+            <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://twitter.github.com/bootstrap/" data-count="horizontal" data-via="twbootstrap" data-related="mdo:Creator of Twitter Bootstrap">Tweet</a>
+          </li>
+        </ul>
+      </div>
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
@@ -81,45 +96,10 @@
     <script src="./js/bootstrap-collapse.js"></script>
     <script src="./js/bootstrap-carousel.js"></script>
     <script src="./js/bootstrap-typeahead.js"></script>
-    <!-- newest version may be buggy
-    -->
-    <script src="./js/highcharts/highcharts.js"></script>
-    <script src="./js/highcharts/modules/exporting.js"></script>
-    <script src="./js/firebat/init.js"></script>
-    <script src="./js/firebat/data_series.js"></script>
-    <!--
-    <script src="//code.highcharts.com/2.1.9/highcharts.js"></script>
-    -->
-
 <script type="text/javascript">
 $(function () {
     $(document).ready(function() {
-        //resp_time_chart('resp_time_chart', resp_percentiles_series)
-        resp_opts = {
-            'title': 'Responce time percentiles',
-            'yTitle': 'Responce time',
-            'postfix': ' ms',
-        };
-        resp_percentiles_series.push(rps_series)
-        base_chart('resp_time_chart', resp_percentiles_series, resp_perc_parser, resp_opts);
-
-        status_opts = {
-            'title': 'HTTP status codes',
-            'yTitle': 'Number',
-            'postfix': '',
-            'info_link': 'http://httpstatus.es/'
-        };
-        status_codes_series.push(rps_series)
-        base_chart('status_codes_chart', status_codes_series, status_codes_parser, status_opts);
-
-        errno_opts = {
-            'title': 'Errno from TCP socket',
-            'yTitle': 'Number',
-            'postfix': '',
-            'info_link': 'https://gist.github.com/2413028'
-        };
-        errno_series.push(rps_series)
-        base_chart('errno_chart', errno_series, errno_parser, errno_opts);
+      console.info('I\'m ready!')
     });
 });
         </script>

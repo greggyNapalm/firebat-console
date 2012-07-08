@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Results</title>
+    <title>Time Research</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -42,8 +42,8 @@
           <a class="brand" href="#">Firebat console</a>
           <div class="nav-collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
-              <li><a href="time_research.html">Time Research</a></li>
+              <li><a href="index.html">Home</a></li>
+              <li class="active"><a href="#time_research">Time Research</a></li>
               <li><a href="about.html">About</a></li>
             </ul>
           </div><!--/.nav-collapse -->
@@ -53,7 +53,7 @@
 
     <div class="container">
 
-      <h1>Fire result</h1>
+      <h1>Time Research</h1>
       <!--
       <p>Ниже преведены графики такие-то.</p>
       -->
@@ -86,7 +86,9 @@
     <script src="./js/highcharts/highcharts.js"></script>
     <script src="./js/highcharts/modules/exporting.js"></script>
     <script src="./js/firebat/init.js"></script>
+    <!--
     <script src="./js/firebat/data_series.js"></script>
+    -->
     <!--
     <script src="//code.highcharts.com/2.1.9/highcharts.js"></script>
     -->
@@ -94,32 +96,31 @@
 <script type="text/javascript">
 $(function () {
     $(document).ready(function() {
-        //resp_time_chart('resp_time_chart', resp_percentiles_series)
-        resp_opts = {
-            'title': 'Responce time percentiles',
-            'yTitle': 'Responce time',
-            'postfix': ' ms',
-        };
-        resp_percentiles_series.push(rps_series)
-        base_chart('resp_time_chart', resp_percentiles_series, resp_perc_parser, resp_opts);
+        //resp_opts = {
+        //    'title': 'Responce time percentiles',
+        //    'yTitle': 'Responce time',
+        //    'postfix': ' ms',
+        //};
+        //resp_percentiles_series.push(rps_series)
+        //base_chart('resp_time_chart', resp_percentiles_series, resp_perc_parser, resp_opts);
 
-        status_opts = {
-            'title': 'HTTP status codes',
-            'yTitle': 'Number',
-            'postfix': '',
-            'info_link': 'http://httpstatus.es/'
-        };
-        status_codes_series.push(rps_series)
-        base_chart('status_codes_chart', status_codes_series, status_codes_parser, status_opts);
+        //status_opts = {
+        //    'title': 'HTTP status codes',
+        //    'yTitle': 'Number',
+        //    'postfix': '',
+        //    'info_link': 'http://httpstatus.es/'
+        //};
+        //status_codes_series.push(rps_series)
+        //base_chart('status_codes_chart', status_codes_series, status_codes_parser, status_opts);
 
-        errno_opts = {
-            'title': 'Errno from TCP socket',
-            'yTitle': 'Number',
-            'postfix': '',
-            'info_link': 'https://gist.github.com/2413028'
-        };
-        errno_series.push(rps_series)
-        base_chart('errno_chart', errno_series, errno_parser, errno_opts);
+        //errno_opts = {
+        //    'title': 'Errno from TCP socket',
+        //    'yTitle': 'Number',
+        //    'postfix': '',
+        //    'info_link': 'https://gist.github.com/2413028'
+        //};
+        //errno_series.push(rps_series)
+        //base_chart('errno_chart', errno_series, errno_parser, errno_opts);
     });
 });
         </script>
