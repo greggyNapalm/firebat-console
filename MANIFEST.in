@@ -1,0 +1,3 @@
+include README.rst
+include LICENSE.bsd
+recursive-include firebat/console *.yaml *.jinja
