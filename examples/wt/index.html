@@ -94,7 +94,17 @@
 <script type="text/javascript">
 $(function () {
     $(document).ready(function() {
-        //resp_time_chart('resp_time_chart', resp_percentiles_series)
+        //var s = document.createElement('script');
+        //s.type = 'text/javascript';
+        //s.async = true;
+        //s.src = './js/firebat/data_series.js';
+        //var x = document.getElementsByTagName('script')[0];
+        //x.parentNode.insertBefore(s, x);
+
+        $.each(rps_series.data, function(idx, value) {
+            value[0] = value[0]*1000  // make js time stamp from epoach
+        });
+
         var resp_opts = {
             'title': 'Responce time percentiles',
             'yTitle': 'Responce time',

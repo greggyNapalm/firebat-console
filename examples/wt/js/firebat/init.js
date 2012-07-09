@@ -276,8 +276,9 @@ function base_chart(container_id, data_series, praser, opts_up) {
                 dashStyle: 'solid',
             },
             formatter: function() {
-                //console.info(this.y)
-                return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + this.points[2].y + ' rps';
+                var point = this.points[this.points.length-1]
+                //return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + this.points[2].y + ' rps';
+                return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + point.y + ' rps';
             },
         },
 
@@ -299,6 +300,12 @@ function base_chart(container_id, data_series, praser, opts_up) {
     });
 
     $.each(data_series, function(index, s) {
+        if (s.name != 'rps') {
+            //console.info(s.name, s.data[55], s.data[56], s.data[57]);
+            $.each(s.data, function(idx, value) {
+                value[0] = value[0]*1000  // make js time stamp from epoach
+            });
+        };
         chart.addSeries(praser(s));
     });
 }
