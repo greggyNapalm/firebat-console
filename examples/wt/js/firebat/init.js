@@ -6,7 +6,7 @@ function resp_perc_parser(s) {
         s: dict, ready to be added highcharts data series
            for respoce percentiles chart.
     */
-    series_color = {
+    var series_color = {
         'rps': '#990000',
         '100': '#002A8F',
         '99': '#7CB3F1',
@@ -19,7 +19,7 @@ function resp_perc_parser(s) {
         '50': '#F51D30',
     };
 
-    up_common = {
+    var up_common = {
         legendIndex: 0,
         color: series_color[s.name],
         marker: {
@@ -65,7 +65,7 @@ function status_codes_parser(s) {
         if (name == 'rps') {
             return '#990000'
         };
-        group = parseInt(name / 100)
+        var group = parseInt(name / 100)
         if (group == 1) {
             color = '#FFE175';
         } else if (group == 2) {
@@ -82,7 +82,7 @@ function status_codes_parser(s) {
         return color
     }
 
-    up_common = {
+    var up_common = {
         legendIndex: 0,
         color: color_by_name(s.name),
         //color: series_color[s.name],
@@ -132,7 +132,7 @@ function errno_parser(s) {
         return colors;
     }
     // see: https://gist.github.com/2413028
-    colors = generateColors(132)
+    var colors = generateColors(132)
     function color_by_name(name, colors) {
         if (name == 'rps') {
             return '#990000'
@@ -141,7 +141,7 @@ function errno_parser(s) {
         return color
     }
 
-    up_common = {
+    var up_common = {
         legendIndex: 0,
         color: color_by_name(s.name, colors),
         marker: {
@@ -179,7 +179,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
         nothing, just create a chart.
     */
 
-    opts = {
+    var opts = {
         'title': 'Some Title',
         //'subtitle': 'Any text here?',
         'subtitle': '',

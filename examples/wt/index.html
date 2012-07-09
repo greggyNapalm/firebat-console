@@ -95,7 +95,7 @@
 $(function () {
     $(document).ready(function() {
         //resp_time_chart('resp_time_chart', resp_percentiles_series)
-        resp_opts = {
+        var resp_opts = {
             'title': 'Responce time percentiles',
             'yTitle': 'Responce time',
             'postfix': ' ms',
@@ -103,7 +103,7 @@ $(function () {
         resp_percentiles_series.push(rps_series)
         base_chart('resp_time_chart', resp_percentiles_series, resp_perc_parser, resp_opts);
 
-        status_opts = {
+        var status_opts = {
             'title': 'HTTP status codes',
             'yTitle': 'Number',
             'postfix': '',
@@ -112,7 +112,7 @@ $(function () {
         status_codes_series.push(rps_series)
         base_chart('status_codes_chart', status_codes_series, status_codes_parser, status_opts);
 
-        errno_opts = {
+        var errno_opts = {
             'title': 'Errno from TCP socket',
             'yTitle': 'Number',
             'postfix': '',
