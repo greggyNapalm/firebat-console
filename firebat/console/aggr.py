@@ -16,16 +16,8 @@ import logging
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
 import datetime
-import bisect
-import rbtree
-import copy
-from subprocess import Popen, PIPE
 
 from jinja2 import Template
-try:
-    from http_parser.parser import HttpParser
-except ImportError:
-    from http_parser.pyparser import HttpParser
 
 from firebat.console.stepper import series_from_schema
 import string
@@ -381,7 +373,6 @@ def process_phout(phout_fh):
     step_size = int(len(calc_load_series['data']) / POINTS_IN_CHART)
     calc_load_series['data'] = calc_load_series['data'][0::step_size]
     scrend_out_stmps = [el[0] for el in calc_load_series['data']]
-    print 'scrend_out_stmps: %s' % scrend_out_stmps[:3]
 
     p_stat = phout_stat(fire)
     current_epoch = 0
@@ -403,6 +394,3 @@ def process_phout(phout_fh):
     # all phout lines parsed, time to aggregate data to expected metrics
     p_stat.calc_percentiles(scrend_out_stmps)
     output_data(p_stat, calc_load_series)
-
-if __name__ == '__main__':
-    parse_answ()

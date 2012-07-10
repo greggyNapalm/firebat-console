@@ -34,7 +34,7 @@ from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
 from firebat.console.cmd import get_running_jobs
-from firebat.console.aggr import parse_answ, phout
+from firebat.console.aggr import process_phout
 
 
 def exit_err(msg):
@@ -146,7 +146,7 @@ def main():
 
     if args.phout:
         with open('phout.txt', 'r') as phout_fh:
-            phout(phout_fh)
+            process_phout(phout_fh)
         sys.exit(0)
 
     logger = get_logger(args)

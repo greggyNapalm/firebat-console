@@ -332,7 +332,9 @@ def line_series(rps_from, rps_to, duration, tick_offset):
         proficit += load
         if proficit >= 1:
             rps_drop = int(proficit)
-            result.append((t * 1000, rps_drop))
+            # no need to convert epoach to JS time stamps,
+            # that will be done earlier on client sie(JS).
+            result.append((t, rps_drop))
             proficit -= rps_drop
         else:
             result.append((t, 0))
