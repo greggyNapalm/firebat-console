@@ -43,7 +43,7 @@ def validate_duration(duration):
     return not duration.translate(trans_table, allowed)
 
 
-def trans_to_ms(duration, schema):
+def trans_to_ms(duration, schema,):
     '''Transfer duration from short notation to milliseconds
     Args:
         duration: str with declare time interval in short notation
@@ -268,6 +268,105 @@ def process_load_schema(schema, tick_offset):
         schema_format_err(schema, msg=', schema pasrser malformed!')
     for tick in gen:
         yield tick
+
+
+def const_series(rps, duration, tick_offset):
+    '''Make data series in Highcharts format from constraint load schema.
+    Args:
+        rps: int,request peer second
+        duration: load chank duration in seconds
+        tick_offset: int, first tick offset in seconds(epoch)
+
+    Returns:
+        series: list of tuples, Highcharts data series.
+    '''
+    result = []
+    surplus = 0.0
+    for t in xrange(tick_offset, tick_offset + duration + 1):
+        surplus += rps
+        ticks_in_s = round(surplus)
+        result.append((t * 1000, int(ticks_in_s)))
+        surplus -= ticks_in_s
+    return result
+
+
+def step_series(rps_from, rps_to, step_dur, step_size, tick_offset):
+    '''Make data series in Highcharts format from step load schema.
+    Args:
+        rps_from: int, first step load(request peer second)
+        rps_to: int, last step load(request peer second)
+        step_dur: int, each step time length in seconds
+        step_size: int, rps difference between two neighboring steps
+        tick_offset: int, previous time tick position
+
+    Returns:
+        series: list of tuples, Highcharts data series.
+    '''
+    result = []
+    cur_step = rps_from
+    cur_step_border = tick_offset
+    while cur_step <= rps_to:
+        result.extend(const_series(cur_step, step_dur, cur_step_border))
+        cur_step += step_size
+        cur_step_border += step_dur
+    return result
+
+def line_series(rps_from, rps_to, duration, tick_offset):
+    '''Make time ticks from line load algorithm(load schema)
+    Args:
+        rps_from: int, starting load
+        rps_to: int, ending load
+        duration: int, time length in seconds
+        tick_offset: int, previous time tick position
+
+    Returns:
+        series: list of tuples, Highcharts data series.
+    '''
+    result = []
+    der = (rps_to - rps_from) / duration  # load derivative
+    proficit = 0
+
+    for t in xrange(tick_offset, tick_offset + duration + 1):
+        t_num = t - tick_offset  # second number
+        load = rps_from + der * t_num
+        proficit += load
+        if proficit >= 1:
+            rps_drop = int(proficit)
+            result.append((t * 1000, rps_drop))
+            proficit -= rps_drop
+        else:
+            result.append((t, 0))
+
+    return result
+
+
+def series_from_schema(schema, tick_offset):
+    ''' Parse and validate load algorithm(load schema) and call appropriate
+    function.
+    Args:
+        schema: list, @see docs #FIXME: add docs link
+        tick_offset: int, previous time tick position(epoch)
+
+    Returns:
+        series: list of tuples, Highcharts data series.
+    '''
+    s = parse_schema(schema)
+    if s['format'] == 'const':
+        #gen = const_shema(s['rpms'], s['duration'], tick_offset)
+        return const_series(s['rpms'] * 1000, s['duration'] / 1000, tick_offset)
+    elif s['format'] == 'step':
+        #gen = step_shema(s['rpms_from'], s['rpms_to'], s['step_dur'],\
+        #                 s['step_size'], tick_offset)
+        return step_series(s['rpms_from'] * 1000, s['rpms_to'] * 1000,\
+                s['step_dur'] / 1000, s['step_size'] * 1000, tick_offset)
+    elif s['format'] == 'line':
+        #gen = line_shema(s['rpms_from'], s['rpms_to'], s['duration'],\
+        #                 tick_offset)
+        return line_series(s['rpms_from'] * 1000, s['rpms_to'] * 1000,\
+                s['duration'] / 1000, tick_offset)
+    else:
+        schema_format_err(schema, msg=', schema pasrser malformed!')
+
 
 def fire_duration(fire):
     ''' Calculate total fire(job) duration.

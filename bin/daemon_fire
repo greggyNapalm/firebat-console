@@ -179,6 +179,16 @@ def update_fire(status, json_path='.fire.json', logger=None):
     except IOError, e:
         logger.error('Could not write "%s": %s\n' % (new_path, e))
 
+def update_fire(status, json_path='.fire.json'):
+    with open(json_path, "r+") as fire_fh:
+        fire = json.loads(fire_fh.read())
+        fire['owner'] = status.owner
+        fire['uid'] = status.uid
+        fire['started_at'] = status.started_at.strftime('%s')
+        new_cfg = json.dumps(fire)
+        fire_fh.truncate(0)
+        fire_fh.write(new_cfg)
+
 def run_phantom(status, sleep_time=1, logger=None):
     '''Create new POSIX process and wait until exit.
     Args:

@@ -34,6 +34,7 @@ from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
 from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
 from firebat.console.cmd import get_running_jobs
+from firebat.console.aggr import parse_answ, phout
 
 
 def exit_err(msg):
@@ -111,6 +112,9 @@ def get_arg_parser():
     parser.add_argument('--list', action="store_const", const=True,
             help='List details of currently running fires.', dest='list_only')
 
+    parser.add_argument('--phout', action="store_const", const=True,
+            help='Parse phout file.', dest='phout')
+
     parser.add_argument('--debug', action="store_const", const=True,
             help='Whether to show debug msg in STDOUT', dest='debug')
 
@@ -138,6 +142,11 @@ def main():
     args = get_arg_parser().parse_args()
     if args.list_only:
         get_running_jobs()
+        sys.exit(0)
+
+    if args.phout:
+        with open('phout.txt', 'r') as phout_fh:
+            phout(phout_fh)
         sys.exit(0)
 
     logger = get_logger(args)
