@@ -40,6 +40,7 @@ setup(
     scripts=[
         "bin/fire",
         "bin/daemon_fire",
+        "bin/fire-chart",
     ],
     packages=[
         'firebat',
