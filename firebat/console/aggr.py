@@ -356,7 +356,15 @@ def output_data(stat, calc_load_series, series_path='data_series.js'):
                 json.dumps(stat.get_errno_hcds()) + ';\n')
 
 
-def process_phout(phout_fh):
+def get_pages_context(stat, fire):
+    ctx = {
+        'title': '555 title',
+        'header': '555 header',
+    }
+    return ctx
+
+def process_phout(phout_fh, points_num=200, dst_file='data_series.js',
+                  fire_path='.fire_up.json'):
     ''' Read phout fire log, aggregate data, create charts data series.
     Args:
         phout_fh: File object with log data. 
@@ -364,14 +372,17 @@ def process_phout(phout_fh):
         static Web app on file system.
     '''
 
-    fire = get_fire()
+    fire = get_fire(json_path=fire_path)
     calc_load_series = {  # rps calculated data series
         'name': 'rps',
         'data': get_calc_load_series(fire),
     }
-    # get only some points according to POINTS_IN_CHART constraint
-    step_size = int(len(calc_load_series['data']) / POINTS_IN_CHART)
-    calc_load_series['data'] = calc_load_series['data'][0::step_size]
+    # get only some points according to points_num value
+    if points_num < len(calc_load_series['data']):
+        step_size = int(len(calc_load_series['data']) / points_num)
+        calc_load_series['data'] = calc_load_series['data'][0::step_size]
+
+
     scrend_out_stmps = [el[0] for el in calc_load_series['data']]
 
     p_stat = phout_stat(fire)
@@ -393,4 +404,6 @@ def process_phout(phout_fh):
 
     # all phout lines parsed, time to aggregate data to expected metrics
     p_stat.calc_percentiles(scrend_out_stmps)
-    output_data(p_stat, calc_load_series)
+    output_data(p_stat, calc_load_series, series_path=dst_file)
+
+    return get_pages_context(p_stat, fire)
