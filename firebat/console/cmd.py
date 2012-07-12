@@ -8,13 +8,8 @@ Command line interface for Firebat.
 """
 
 import os
-import time
 import signal
-import getpass
-import logging
 import simplejson as json
-import datetime
-from subprocess import Popen, PIPE
 
 
 def get_running_jobs(pids_path='/tmp/fire/'):
@@ -77,5 +72,3 @@ def get_running_jobs(pids_path='/tmp/fire/'):
 
         except KeyError, e:
             print 'Can\'t found the key: %s' % e
-if __name__ == '__main__':
-    check_existing()

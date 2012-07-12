@@ -8,17 +8,18 @@ Aggregate test results.
 """
 
 import os
+import sys
 import string
 import datetime
+import logging
 from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
-from jinja2 import Template
 
-from firebat.console.stepper import series_from_schema
+from firebat.console.stepper import series_from_schema, schema_format_err
 
 
 class phout_stat(object):
@@ -28,7 +29,7 @@ class phout_stat(object):
         self.last_epoach = 0.0
         self.parts = [100, 99, 98, 95, 90, 85, 80, 75, 50]
         self.resp = {}
-        __vals = [[]] * len(self.parts)
+        #__vals = [[]] * len(self.parts)
         #self.series = dict(zip([str(e) for e in self.parts], __vals))
         #self.series['rps'] = []
         self.series = {
@@ -49,7 +50,11 @@ class phout_stat(object):
         self.errno_lst = []
         self.errno_series = {}
         self.errno_tbl = {}
-        self.time_periods = fire['time_periods']
+        try:
+            self.time_periods = fire['time_periods']
+        except KeyError:
+            exit_err('Can\'t parse *time_periods* fire attribute, it\'s ' +
+                     'necessary!')
         for indx, bound in enumerate(self.time_periods):
             self.time_periods[indx] = bound_to_ms(str(bound),
                                                   self.time_periods)
@@ -84,7 +89,7 @@ class phout_stat(object):
         try:
             self.boundaries[periods[indx + 1]]['num'] += 1
         except IndexError:
-            print 'indx: %s\nperiods: %s' % (indx, periods)
+            exit_err('Buggy indx: %s\nperiods: %s in resp' % (indx, periods))
         try:
             self.resp[epoch]['rtt'].append(rtt)
         except KeyError:
@@ -246,6 +251,17 @@ class phout_stat(object):
         return resp_perc
 
 
+def exit_err(msg):
+    logger = logging.getLogger('firebat.console')
+    if isinstance(msg, str):
+        msg = [msg, ]
+    for m in msg:
+        logger.error(m)
+    if not logger.handlers:
+        sys.stderr.write(msg)
+    sys.exit(1)
+
+
 def get_fire(json_path='.fire_up.json'):
     '''Read JSON encoded file with fire dict inside.
     Args:
@@ -259,9 +275,9 @@ def get_fire(json_path='.fire_up.json'):
         with open(json_path, 'r') as fire_fh:
             return json.loads(fire_fh.read())
     except IOError, e:
-        print 'Could not read "%s": %s\n' % (json_path, e)
+        exit_err('Could not read "%s": %s\n' % (json_path, e))
     except JSONDecodeError, e:
-        print 'Could not parse fire config file: %s\n%s' % (json_path, e)
+        exit_err('Could not parse fire config file: %s\n%s' % (json_path, e))
 
 
 def validate_bound(bound):
@@ -305,7 +321,11 @@ def get_calc_load_series(fire):
         result: list of tuples.
     '''
     result = []
-    offset = int(fire['started_at'])
+    try:
+        offset = int(fire['started_at'])
+    except TypeError:
+        exit_err('Can\'t parse fire *started_at* attribute, config malformed.')
+
     for schema in fire['load']:
         __series = series_from_schema(schema, offset)
         result.extend(__series)
@@ -353,38 +373,38 @@ def output_data(stat, calc_load_series, series_path='data_series.js'):
 
 def get_pages_context(stat, fire):
     ctx = {}
-    ctx['tgt_addr'] = fire['addr']
+    ctx['tgt_addr'] = fire.get('addr')
     ctx['load'] = fire['load']
-    ctx['tags'] = fire['tag']
+    ctx['tags'] = fire.get('tag')
 
     started_at = datetime.datetime.fromtimestamp(float(fire['started_at']))
-    ended_at  = datetime.datetime.fromtimestamp(stat.last_epoach)
+    ended_at = datetime.datetime.fromtimestamp(stat.last_epoach)
     ctx['date'] = started_at.strftime('%d %B %Y')
     ctx['from'] = started_at.strftime('%H:%M:%S')
     ctx['to'] = ended_at.strftime('%H:%M:%S')
     ctx['duration'] = str(ended_at - started_at)
 
-    if fire['owner'] == 'uid':
-      ctx['owner'] = fire['uid']
+    if fire.get('owner') == 'uid':
+        ctx['owner'] = fire.get('uid')
     else:
-      ctx['owner'] = fire['owner']
+        ctx['owner'] = fire.get('owner')
 
     # TODO: add to daemon fire update func
-    ctx['src_host'] = 'generator.magma.edu'
+    ctx['src_host'] = fire.get('src_host')
 
     stat.calc_time_period_tbl()
     ctx['boundaries'] = stat.boundaries
 
     stat.calc_errno_tbl()
     for code, value in stat.errno_tbl.iteritems():
-      value['msg'] = os.strerror(int(code))
+        value['msg'] = os.strerror(int(code))
     ctx['errno_tbl'] = stat.errno_tbl
 
     stat.calc_codes_tbl()
     for code, value in stat.codes_tbl.iteritems():
-      value['msg'] = rh.responses.get(int(code), None)
-      if value['msg']:
-        value['msg'] = value['msg'][0]
+        value['msg'] = rh.responses.get(int(code), None)
+        if value['msg']:
+            value['msg'] = value['msg'][0]
 
     ctx['codes_tbl'] = stat.codes_tbl
     return ctx

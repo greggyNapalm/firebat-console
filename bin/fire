@@ -18,11 +18,9 @@ import argparse
 import logging
 import getpass
 import cPickle
-import time
 import commands
 import copy
 import base64
-from string import maketrans
 from progressbar import Bar, ProgressBar, Percentage, ETA
 
 import yaml
@@ -32,7 +30,6 @@ from firebat import __version__
 from firebat.console.conf import make_conf, get_defaults
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
-from firebat.console.exceptions import StepperAmmoFormat, StepperSchemaFormat
 from firebat.console.cmd import get_running_jobs
 from firebat.console.aggr import process_phout
 
@@ -166,10 +163,8 @@ def main():
         exit_err('Error in parsing fire conf:\n%s' % e)
 
     now = datetime.datetime.now()
-    ammo_cache = {}
     orig_wd = os.getcwd()
     ammo_from_arg = False
-    fires = []
     for idx, f_orig in enumerate(config['fire']):
         f = defaults['fire_conf']
         f.update(f_orig)
@@ -211,7 +206,6 @@ def main():
         stpd_start = datetime.datetime.now()
         with open(ammo_path, 'r') as ammo_fh,\
             open('ammo.stpd', 'w+') as stpd_fh:
-            f_path = os.path.abspath(ammo_fh.name)
             ammos = parse_ammo(ammo_fh)
             offset = f.get('offset', 0)
             for schema in f['load']:

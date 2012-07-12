@@ -16,12 +16,12 @@ import getpass
 import logging
 import simplejson as json
 import datetime
-import urllib
-import pickle
 import cPickle
 import base64
 from string import maketrans
 from subprocess import Popen, PIPE
+
+from simplejson.decoder import JSONDecodeError
 
 # const
 #PID_FILE = './fire.pid'
@@ -118,7 +118,6 @@ def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
     if stamp:
         if not os.path.exists(pid_dir):
             os.makedirs(pid_dir)
-        trantab = maketrans('.', '_')
         time_str = "%.6f" % time.time()
         time_str = time_str.translate(maketrans('.', '_'))
         pid_file = pid_dir + name + '_%s.pid' % time_str
@@ -149,6 +148,7 @@ def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
     logger.addHandler(fh)
     return logger
 
+
 def update_fire(status, json_path='.fire.json', logger=None):
     '''Update fire dict according to status object.
     Args:
@@ -167,7 +167,8 @@ def update_fire(status, json_path='.fire.json', logger=None):
     except IOError, e:
         logger.error('Could not read "%s": %s\n' % (json_path, e))
     except JSONDecodeError, e:
-        logger.error('Could not parse fire config file: %s\n%s' % (json_path, e))
+        logger.error('Could not parse fire config file: %s\n%s' % (json_path,
+                                                                   e))
     fire['owner'] = status.owner
     fire['uid'] = status.uid
     fire['total_dur'] = status.total_dur
@@ -179,15 +180,16 @@ def update_fire(status, json_path='.fire.json', logger=None):
     except IOError, e:
         logger.error('Could not write "%s": %s\n' % (new_path, e))
 
-def update_fire(status, json_path='.fire.json'):
-    with open(json_path, "r+") as fire_fh:
-        fire = json.loads(fire_fh.read())
-        fire['owner'] = status.owner
-        fire['uid'] = status.uid
-        fire['started_at'] = status.started_at.strftime('%s')
-        new_cfg = json.dumps(fire)
-        fire_fh.truncate(0)
-        fire_fh.write(new_cfg)
+#def update_fire(status, json_path='.fire.json'):
+#    with open(json_path, "r+") as fire_fh:
+#        fire = json.loads(fire_fh.read())
+#        fire['owner'] = status.owner
+#        fire['uid'] = status.uid
+#        fire['started_at'] = status.started_at.strftime('%s')
+#        new_cfg = json.dumps(fire)
+#        fire_fh.truncate(0)
+#        fire_fh.write(new_cfg)
+
 
 def run_phantom(status, sleep_time=1, logger=None):
     '''Create new POSIX process and wait until exit.

@@ -10,24 +10,10 @@ Generate statis Web site with test results.
 
 import os
 import sys
-#import datetime
-#import distutils
 import shutil
 import argparse
 import logging
-#import getpass
-#import cPickle
-#import time
-#import commands
-#import copy
-#import base64
-#from string import maketrans
-#from progressbar import Bar, ProgressBar, Percentage, ETA
-#
-#import yaml
-#import simplejson as json
 
-from jinja2 import Template
 from jinja2 import FileSystemLoader
 from jinja2.environment import Environment
 
@@ -81,6 +67,7 @@ def get_logger(args):
     logger.addHandler(ch)
     return logger
 
+
 def prepare_dir(args):
     src_path = __path + '/result_markdown'
     try:
@@ -107,7 +94,7 @@ def render_pages(context):
         if f.endswith(".jinja"):
             os.unlink(f)
 
-            
+
 def main():
     args = get_arg_parser().parse_args()
     logger = get_logger(args)
@@ -120,9 +107,9 @@ def main():
                       fire_path=orig_wd + '/.fire_up.json')
 
         render_pages(context)
-     
+
     os.chdir(orig_wd)
     logger.info('All done.')
-    
+
 if __name__ == '__main__':
     main()

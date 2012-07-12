@@ -8,9 +8,7 @@ Generate stepped ammo(input data + load schema)
 """
 
 import os
-import sys
 import string
-import logging
 
 from exceptions import StepperAmmoFormat, StepperSchemaFormat
 
@@ -311,6 +309,7 @@ def step_series(rps_from, rps_to, step_dur, step_size, tick_offset):
         cur_step_border += step_dur
     return result
 
+
 def line_series(rps_from, rps_to, duration, tick_offset):
     '''Make time ticks from line load algorithm(load schema)
     Args:
@@ -354,16 +353,12 @@ def series_from_schema(schema, tick_offset):
     '''
     s = parse_schema(schema)
     if s['format'] == 'const':
-        #gen = const_shema(s['rpms'], s['duration'], tick_offset)
-        return const_series(s['rpms'] * 1000, s['duration'] / 1000, tick_offset)
+        return const_series(s['rpms'] * 1000, s['duration'] / 1000,
+                            tick_offset)
     elif s['format'] == 'step':
-        #gen = step_shema(s['rpms_from'], s['rpms_to'], s['step_dur'],\
-        #                 s['step_size'], tick_offset)
         return step_series(s['rpms_from'] * 1000, s['rpms_to'] * 1000,\
                 s['step_dur'] / 1000, s['step_size'] * 1000, tick_offset)
     elif s['format'] == 'line':
-        #gen = line_shema(s['rpms_from'], s['rpms_to'], s['duration'],\
-        #                 tick_offset)
         return line_series(s['rpms_from'] * 1000, s['rpms_to'] * 1000,\
                 s['duration'] / 1000, tick_offset)
     else:
