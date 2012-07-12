@@ -1,3 +1,4 @@
 include README.rst
 include LICENSE.bsd
 recursive-include firebat/console *.yaml *.jinja
+recursive-include firebat/result_markdown *.jinja *.html *.css *.less *.js *.png *.ico
