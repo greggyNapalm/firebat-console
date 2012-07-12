@@ -2,12 +2,11 @@
 Changelog
 =========
 
-0.2
+0.4
 ===
 
-.. note::
-
-    Work in progress. Version not released.
+* daemonized Phantom launcher added
+* Web based report added 
 
 0.1
 ===
