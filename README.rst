@@ -4,7 +4,7 @@ Firebat-console
    :alt: Build Status
    :target: https://secure.travis-ci.org/greggyNapalm/firebat_console
 
-Console tool designed to make simple test case for Phantom load tool.
+Firebat is console based utility library for Phantom I/O engine. Create and launch tests, analyze results.
 
 Documentation
 -------------
@@ -13,6 +13,13 @@ More info and documentation can be found at: `<http://firebat-console.readthedoc
 
 Russian documentation is also available: `<http://firebat-console-ru.readthedocs.org/>`_
 
+
+Requirements
+------------
+
+* GNU Linux > 2.6
+* Phantom I/O engine v14
+* Python v2.7
 
 Installation
 ------------
@@ -23,7 +30,7 @@ Stable version:
 
 ::
 
-    pip install -e git+git://github.com/greggyNapalm/firebat_console.git@production#egg=firebat-console
+    pip install firebat-console
 
 Development version:
 
@@ -33,30 +40,13 @@ Development version:
 
 
 
-Test example
-------------
+Screenshots
+-----------
 
 ::
 
     comming soon
 
-Arguments
----------
-
-``-a AMMO_FILE, --ammo AMMO_FILE``
-  Path to ammo file, overlaps ``input_file`` config option
-
-``-o , --only-prepare-stpd``
-  Only generate ammo stpd and exit
-
-``--list``
-  List details of currently running fires(jobs)
-
-``-h, --help``
-  Display args list
-
-``--debug``
-  Enable verbose logging
-
-``--version``
-  Display current version and exit
+License
+-------
+BSD
