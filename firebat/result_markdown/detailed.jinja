@@ -1,0 +1,72 @@
+{% extends "base.jinja" %}
+{% set title = 'Detailed result' %}
+{% set detailede = True %}
+{% set header = 'Detailed result' %}
+{% block content %}
+    <br>
+    <div class="span4">
+      <h3>Times for period</h3>
+      <table class="table table-bordered" style="width: auto;white-space: nowrap;">
+      <thead>
+        <tr>
+          <th>Border</th>
+          <th>Number</th>
+          <th>Percentile</th>
+          <th>Chunk</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in boundaries|dictsort %}
+        <tr>
+          <td>{{ item[1].perc_above }}% < {{ item[0] }} ms</td>
+          <td>{{ item[1].num }}</td>
+          <td>{{ item[1].percentil }}%</td>
+          <td>{{ item[1].btw }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      </table>
+    </div>
+    <div class="span4">
+      <h3>HTTP codes</h3>
+      <table class="table table-bordered" style="width:auto;">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Percentile</th>
+          <th>Number</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in codes_tbl|dictsort %}
+        <tr>
+          <td><code style="color: #000;">{{ item[0] }} {{ item[1].msg }}</td>
+          <td>{{ item[1].percentil }}%</td>
+          <td>{{ item[1].num }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      </table>
+    </div>
+    <div class="span4">
+      <h3>Socket Errno codes</h3>
+      <table class="table table-bordered" style="width:auto;">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Percentile</th>
+          <th>Number</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in errno_tbl|dictsort %}
+        <tr>
+          <td><code style="color: #000;">{{ item[1].msg }}</td>
+          <td>{{ item[1].percentil }}%</td>
+          <td>{{ item[1].num }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      </table>
+    </div>
+{% endblock content %}
