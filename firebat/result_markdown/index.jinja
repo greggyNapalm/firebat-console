@@ -1,16 +1,72 @@
 {% extends "base.jinja" %}
 {% set title = 'Results' %}
 {% set header = 'Quick Results' %}
+{% block head %}
+<style>
+        body {
+          padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+        }
+
+        .span4
+        {
+            float: right;
+            width: auto;
+        }
+
+        .span8
+        {
+            float: none;
+            width: auto;
+            overflow: hidden;
+            zoom: 1;
+        }
+</style>
+{% endblock head %}
 {% block content %}
-      <div id="resp_time_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
-      <br>
-      <div id="status_codes_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
-      <br>
-      <div id="errno_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+      <section id="navbar">
+          <div class="span4">
+              <h4>Details</h4>
+              Date: {{ date }}<br>
+              Owner: {{ owner }}<br>
+              Duration: {{ duration }}<br>
+              From: {{ from }}<br>
+              To: {{ to }}<br>
+              <br>
+              <h4>Hosts</h4>
+              Src: {{ src_host }}<br>
+              Dst: {{ tgt_addr }}<br>
+              <br>
+              <h4>Load Schema</h4>
+              {% for chunk in load %}
+                <li>{{ chunk }}</li>
+              {% endfor %}
+              <br>
+              <h4>Tags</h4>
+              {% for tag in tags %}
+                <li>{{ tag }}</li>
+              {% endfor %}
+              <br>
+              <h4>Resp percentiles</h4>
+              {% for item in boundaries|dictsort %}
+              {{ "%.2f%%"|format(item[1].perc_above) }}% < {{ item[0] }} ms<br>
+              {% endfor %}
+          </div><!-- /.span -->
+          <div class="span8">
+            <!--
+            <p>Ниже преведены графики такие-то.</p>
+            -->
+            <div id="resp_time_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+            <br>
+            <div id="status_codes_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+            <br>
+            <div id="errno_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+          </div><!-- /.span -->
+        </div><!-- /.row -->
+      </section>
 {% endblock content %}
 {% block js %}
-    <script src="./js/highcharts/highcharts.js"></script>
-    <script src="./js/highcharts/modules/exporting.js"></script>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/modules/exporting.js"></script>
     <script src="./js/firebat/init.js"></script>
     <script src="./js/firebat/data_series.js"></script>
 

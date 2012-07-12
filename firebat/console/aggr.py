@@ -8,34 +8,24 @@ Aggregate test results.
 """
 
 import os
-import sys
-import time
-import signal
-import getpass
-import logging
-import simplejson as json
-from simplejson.decoder import JSONDecodeError
-import datetime
-
-from jinja2 import Template
-
-from firebat.console.stepper import series_from_schema
 import string
-
-#
+import datetime
+from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-# constaints
-#POINTS_IN_CHART = 120.0
-POINTS_IN_CHART = 300.0
+import simplejson as json
+from simplejson.decoder import JSONDecodeError
+from jinja2 import Template
+
+from firebat.console.stepper import series_from_schema
 
 
 class phout_stat(object):
     def __init__(self, fire):
         #self.check = 0
-        self.first_epoach = 0
-        self.last_epoach = 0
+        self.first_epoach = 0.0
+        self.last_epoach = 0.0
         self.parts = [100, 99, 98, 95, 90, 85, 80, 75, 50]
         self.resp = {}
         __vals = [[]] * len(self.parts)
@@ -61,7 +51,8 @@ class phout_stat(object):
         self.errno_tbl = {}
         self.time_periods = fire['time_periods']
         for indx, bound in enumerate(self.time_periods):
-            self.time_periods[indx] = bound_to_ms(str(bound), self.time_periods)
+            self.time_periods[indx] = bound_to_ms(str(bound),
+                                                  self.time_periods)
         self.time_periods.sort()
         self.boundaries = {k: {'num': 0, 'percentil': 0} for k in\
                 self.time_periods}
@@ -151,7 +142,7 @@ class phout_stat(object):
             self.codes_series[c] = []
         self.errno_lst = set(self.errno_lst)
         for e in self.errno_lst:
-            self.errno_series[e] = [] 
+            self.errno_series[e] = []
         for tick, r in self.resp.iteritems():
             if tick in scrend_out_stmps:
                 # responce time calc
@@ -176,10 +167,10 @@ class phout_stat(object):
                 # errno
                 for e in self.errno_lst:
                     try:
-                        self.errno_series[e].append((tick, r['errno'].get(e, 0)))
+                        self.errno_series[e].append((tick,
+                                                     r['errno'].get(e, 0)))
                     except KeyError:
                         self.errno_series[e] = [(tick, r['errno'].get(e, 0))]
-
 
     def get_errno_hcds(self):
         '''Make highcharts data series for errno chart.
@@ -217,19 +208,22 @@ class phout_stat(object):
             self.boundaries[key]['percentil'] = round(\
                 (self.boundaries[key]['num'] / self.responses_num) * 100, 2)
             self.boundaries[key]['btw'] = '%s -- %s' % (prev['key'], key)
-            prev['val'] = round(self.boundaries[key]['percentil'] + prev['val'], 2)
+            prev['val'] = round(self.boundaries[key]['percentil'] +\
+                prev['val'], 2)
             self.boundaries[key]['perc_above'] = prev['val']
             prev['key'] = key
 
     def calc_codes_tbl(self):
         # HTTP status codes table
         for idx, val in self.codes_tbl.iteritems():
-            val['percentil'] = round((val['num'] / self.http_codes_num) * 100, 2)
+            val['percentil'] = round((val['num'] / self.http_codes_num) * 100,
+                                     2)
 
     def calc_errno_tbl(self):
         # Errno table
         for idx, val in self.errno_tbl.iteritems():
-            val['percentil'] = round((val['num'] / self.responses_num) * 100, 2)
+            val['percentil'] = round((val['num'] / self.responses_num) * 100,
+                                     2)
 
     def get_resp_perc_hcds(self):
         '''Make highcharts data series for resp time percentiles chart.
@@ -238,7 +232,8 @@ class phout_stat(object):
         '''
         resp_perc = []
         self.series['1'] = self.series.pop('rps')  # to sort dict keys as ints
-        for key in sorted(self.series.iterkeys(), key=lambda key: int(key), reverse=True):
+        for key in sorted(self.series.iterkeys(), key=lambda key: int(key),
+                          reverse=True):
             if key == '1':
                 self.reply_series['data'] = self.series[key]
                 del self.series[key]
@@ -357,17 +352,49 @@ def output_data(stat, calc_load_series, series_path='data_series.js'):
 
 
 def get_pages_context(stat, fire):
-    ctx = {
-        'title': '555 title',
-        'header': '555 header',
-    }
+    ctx = {}
+    ctx['tgt_addr'] = fire['addr']
+    ctx['load'] = fire['load']
+    ctx['tags'] = fire['tag']
+
+    started_at = datetime.datetime.fromtimestamp(float(fire['started_at']))
+    ended_at  = datetime.datetime.fromtimestamp(stat.last_epoach)
+    ctx['date'] = started_at.strftime('%d %B %Y')
+    ctx['from'] = started_at.strftime('%H:%M:%S')
+    ctx['to'] = ended_at.strftime('%H:%M:%S')
+    ctx['duration'] = str(ended_at - started_at)
+
+    if fire['owner'] == 'uid':
+      ctx['owner'] = fire['uid']
+    else:
+      ctx['owner'] = fire['owner']
+
+    # TODO: add to daemon fire update func
+    ctx['src_host'] = 'generator.magma.edu'
+
+    stat.calc_time_period_tbl()
+    ctx['boundaries'] = stat.boundaries
+
+    stat.calc_errno_tbl()
+    for code, value in stat.errno_tbl.iteritems():
+      value['msg'] = os.strerror(int(code))
+    ctx['errno_tbl'] = stat.errno_tbl
+
+    stat.calc_codes_tbl()
+    for code, value in stat.codes_tbl.iteritems():
+      value['msg'] = rh.responses.get(int(code), None)
+      if value['msg']:
+        value['msg'] = value['msg'][0]
+
+    ctx['codes_tbl'] = stat.codes_tbl
     return ctx
+
 
 def process_phout(phout_fh, points_num=200, dst_file='data_series.js',
                   fire_path='.fire_up.json'):
     ''' Read phout fire log, aggregate data, create charts data series.
     Args:
-        phout_fh: File object with log data. 
+        phout_fh: File object with log data.
     Returns:
         static Web app on file system.
     '''
@@ -382,7 +409,6 @@ def process_phout(phout_fh, points_num=200, dst_file='data_series.js',
         step_size = int(len(calc_load_series['data']) / points_num)
         calc_load_series['data'] = calc_load_series['data'][0::step_size]
 
-
     scrend_out_stmps = [el[0] for el in calc_load_series['data']]
 
     p_stat = phout_stat(fire)
@@ -393,7 +419,8 @@ def process_phout(phout_fh, points_num=200, dst_file='data_series.js',
         # http://phantom-doc-ru.rtfd.org/en/latest/analyzing_result_data.html
         if len(l_spltd) != 12:
             print 'Malformed line in phout file: %s' % l
-        epoch, tag, rtt, con_ms, send_ms, proc_ms, resp_ms, phantom_exec, req_byte, resp_byte, errno, http_status = l_spltd
+        epoch, tag, rtt, con_ms, send_ms, proc_ms, resp_ms, phantom_exec, \
+            req_byte, resp_byte, errno, http_status = l_spltd
         epoch = int(epoch.split('.')[0])  # cut out fractional part of epoach
         if epoch > current_epoch:
             if current_epoch == 0:

@@ -1,26 +1,20 @@
 {% extends "base.jinja" %}
 {% set title = 'About Firebat' %}
 {% set header = 'About' %}
-{% block content %}
-      <div class="bs-links">
-        <ul class="quick-links">
-          <li><a href="https://github.com/greggyNapalm/firebat_console/issues">Submit issues</a></li>
-          <li><a href="http://firebat-console.readthedocs.org/en/latest">Read the docs</a></li>
-          <li><a href="http://firebat-console-ru.readthedocs.org/en/latest">Russian documentation is also available</a></li>
-        </ul>
-        <ul class="quick-links">
-          <li>
-            <iframe class="github-btn" src="http://markdotto.github.com/github-buttons/github-btn.html?user=greggyNapalm&repo=firebat_console&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="112px" height="20px"></iframe>
-          </li>
-          <li>
-            <iframe class="github-btn" src="http://markdotto.github.com/github-buttons/github-btn.html?user=greggyNapalm&repo=firebat_console&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="98px" height="20px"></iframe>
-          </li>
-          <li class="follow-btn">
-            <a href="https://twitter.com/Firebat_tool" class="twitter-follow-button" data-link-color="#0069D6" data-show-count="true">Follow @Firebat_tool</a>
-          </li>
-          <li class="tweet-btn">
-            <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://twitter.github.com/bootstrap/" data-count="horizontal" data-via="twbootstrap" data-related="mdo:Creator of Twitter Bootstrap">Tweet</a>
-          </li>
-        </ul>
-      </div>
-{% endblock content %}
+{% block container %}
+      <br>
+      <p class="lead">Firebat is console based utility library for Phantom I/O
+          engine. Create and launch tests, analyze results.
+      <br>
+      BSD licensed.</p>
+      <br><br>
+      <h1><small>Here you can find some information about the Firebat console
+              project</small></h1>
+      <li style="font-size: 17px;"><a href="https://github.com/greggyNapalm/firebat_console">Code</a></li>
+      <li style="font-size: 17px;"><a href="https://github.com/greggyNapalm/firebat_console/issues">Issue tracker</a></li>
+      <li style="font-size: 17px;"><a href="http://firebat-console.readthedocs.org/en/latest">Documentation</a></li>
+      <li style="font-size: 17px;"><a href="http://firebat-console-ru.readthedocs.org/en/latest">Russian documentation is also available</a></li>
+      <li style="font-size: 17px;"><a href="https://twitter.com/Firebat_tool">Firebat on Twitter</a></li>
+      <li style="font-size: 17px;"><a href="irc://irc.freenode.net/firebat">(irc.freenode.net, #firebat)</a></li>
+      <li style="font-size: 17px;"><a href="https://groups.google.com/d/forum/loadit">Mailing List</a></li>
+{% endblock container %}
