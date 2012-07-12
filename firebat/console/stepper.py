@@ -285,7 +285,7 @@ def const_series(rps, duration, tick_offset):
     for t in xrange(tick_offset, tick_offset + duration + 1):
         surplus += rps
         ticks_in_s = round(surplus)
-        result.append((t * 1000, int(ticks_in_s)))
+        result.append((t, int(ticks_in_s)))
         surplus -= ticks_in_s
     return result
 
@@ -333,7 +333,7 @@ def line_series(rps_from, rps_to, duration, tick_offset):
         if proficit >= 1:
             rps_drop = int(proficit)
             # no need to convert epoach to JS time stamps,
-            # that will be done earlier on client sie(JS).
+            # that will be done earlier on client side(JS).
             result.append((t, rps_drop))
             proficit -= rps_drop
         else:
