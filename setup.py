@@ -48,6 +48,7 @@ setup(
     ],
     package_data={
         "firebat": [
+            "console/*.yaml",
             "result_markdown/js/firebat/*.js",
             "result_markdown/js/*.js",
             "result_markdown/img/*.png",
