@@ -30,4 +30,5 @@
     analyzing_result_data
     extending-firebat
     examples
+    debug
     changelog
