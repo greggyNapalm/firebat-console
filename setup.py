@@ -48,7 +48,8 @@ setup(
     ],
     package_data={
         "firebat": [
-            "console/*.yaml",
+            "console/defaults.yaml",
+            "console/phantom.conf.jinja",
             "result_markdown/js/firebat/*.js",
             "result_markdown/js/*.js",
             "result_markdown/img/*.png",
