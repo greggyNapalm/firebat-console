@@ -10,11 +10,11 @@
 
 2. Установить Firebat console.
 ------------------------------
-Firebat console дистрибутируется как python модуль, рекомендую использовать изолированное окружение `vurtualev/virtualenvwrapper <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ и воспользоваться утилитой pip:
+Firebat console дистрибутируется как python package, рекомендую использовать изолированное окружение `vurtualev/virtualenvwrapper <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ и воспользоваться утилитой pip:
 
 ::
 
-    pip install -e git+git://github.com/greggyNapalm/firebat_console.git@production#egg=firebat-console
+    pip install firebat-console
 
 3. Настроить ОС.
 ----------------

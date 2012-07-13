@@ -15,7 +15,7 @@
 :License: `BSD License
  <http://www.voidspace.org.uk/python/license.shtml>`_
 :Support: `Google Group
- <https://groups.google.com/d/forum/phantom_doc>`_
+ <https://groups.google.com/forum/#!forum/loadit>`_
 :Issue tracker: `GitHub Issues
  <https://github.com/greggyNapalm/firebat_console/issues>`_
 
