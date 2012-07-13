@@ -43,9 +43,9 @@ Development version:
 Screenshots
 -----------
 
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss1.png
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss2.png
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss3.png
+.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss11.png
+.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss12.png
+.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss13.png
 
 License
 -------
