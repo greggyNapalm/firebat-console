@@ -1,5 +1,4 @@
 include README.rst
 include LICENSE.bsd
 recursive-include docs Makefile *.rst *.py *.bat
-recursive-include firebat/console *.yaml *.jinja
-recursive-include firebat/result_markdown *.jinja *.html *.css *.less *.js *.png *.ico
+recursive-include firebat *.yaml *.jinja *.css *.less *.js *.png *.ico

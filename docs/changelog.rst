@@ -2,7 +2,7 @@
 Changelog
 =========
 
-0.4
+0.5
 ===
 
 * daemonized Phantom launcher added

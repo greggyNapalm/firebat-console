@@ -46,6 +46,18 @@ setup(
         'firebat',
         'firebat.console',
     ],
+    package_data={
+        "firebat": [
+            "result_markdown/js/firebat/*.js",
+            "result_markdown/js/*.js",
+            "result_markdown/img/*.png",
+            "result_markdown/img/*.ico",
+            "result_markdown/css/*.css",
+            "result_markdown/less/*.less",
+            "result_markdown/less/*.less",
+            "result_markdown/*.jinja",
+            ],
+        },
     zip_safe=False,
     install_requires=install_requirements,
     tests_require=['nose'],

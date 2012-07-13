@@ -17,9 +17,9 @@ Russian documentation is also available: `<http://firebat-console-ru.readthedocs
 Requirements
 ------------
 
-* GNU Linux > 2.6
-* Phantom I/O engine v14
-* Python v2.7
+* GNU Linux >= 2.6
+* Phantom I/O engine >= 14
+* Python >= 2.7 (Not Python3)
 
 Installation
 ------------

@@ -1,9 +1,10 @@
 {% extends "base.jinja" %}
 {% set title = 'Detailed result' %}
-{% set detailede = True %}
 {% set header = 'Detailed result' %}
 {% block content %}
     <br>
+
+    <!-- Responce latency percentiles -->
     <div class="span4">
       <h3>Times for period</h3>
       <table class="table table-bordered" style="width: auto;white-space: nowrap;">
@@ -27,6 +28,8 @@
       </tbody>
       </table>
     </div>
+
+    <!-- HTTP status codes table -->
     <div class="span4">
       <h3>HTTP codes</h3>
       <table class="table table-bordered" style="width:auto;">
@@ -48,6 +51,8 @@
       </tbody>
       </table>
     </div>
+
+    <!-- TCP socket returned errno table -->
     <div class="span4">
       <h3>Socket Errno codes</h3>
       <table class="table table-bordered" style="width:auto;">
@@ -61,7 +66,7 @@
       <tbody>
       {% for item in errno_tbl|dictsort %}
         <tr>
-          <td><code style="color: #000;">{{ item[1].msg }}</td>
+          <td><code style="color: #000;">{{ item[0] }} {{ item[1].msg }}</td>
           <td>{{ item[1].percentil }}%</td>
           <td>{{ item[1].num }}</td>
         </tr>
