@@ -1,0 +1,48 @@
+{
+    "load": [
+        [
+            "step",
+            5,
+            50,
+            5,
+            "2m"
+        ]
+    ],
+    "wd": "/home/gkomissarov/docs/code/python/fire/test/1/SOMEPROJ-123_gkomissarov_20120707-115337/app1",
+    "started_at": "1341419736",
+    "name": "app1",
+    "input_format": "plain",
+    "input_file": "/home/gkomissarov/docs/code/python/fire/test/test.ammo",
+    "total_dur": 1200,
+    "time_periods": [
+        10,
+        45,
+        50,
+        100,
+        150,
+        300,
+        500,
+        "1s",
+        1500,
+        "2s",
+        "3s",
+        "10s"
+    ],
+    "writelog": 1,
+    "network_proto": "ipv4",
+    "instances": 4000,
+    "loop_ammo": true,
+    "transport_proto": "tcp",
+    "savelog": 0,
+    "saveammo": 0,
+    "offset": 0,
+    "owner": "uid",
+    "tag": [
+        "SOMEPROJ",
+        "base-search",
+        "regression"
+    ],
+    "uid": "gkomissarov",
+    "cache_ammo": false,
+    "addr": "127.0.0.1:80"
+}
