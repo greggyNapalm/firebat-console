@@ -35,7 +35,7 @@ fire.yaml
             input_file: '/Users/gkomissarov/docs/vcs/my-github/firebat_console/test.ammo'  # <Строка>, Абсолютный путь до файлы с запросами(ammo file).
             input_format: 'plain'  # <Строка>, формат файла с запросами. На данный момент, только, 'plain'.
             loop_ammo: 1  # <Булевое значение>, Если запросов в ammo файле недостаточно для покрытия схемы нагруки, использоваться ли в бесконечном цикле те же запросы.
-            instances: 4000  # <Целое число>, Кол-во обработчиков(воркеров) приложения Phantom. Читай `документацию фантома <http://phantom-doc-ru.readthedocs.org/en/latest/writing-a-phantom-conf.html#phantom-conf>`_
+            instances: 1000  # <Целое число>, Кол-во обработчиков(воркеров) приложения Phantom. Читай `документацию фантома <http://phantom-doc-ru.readthedocs.org/en/latest/writing-a-phantom-conf.html#phantom-conf>`_
             # logs
             writelog: 1  # <Булевое значение>, пока не используется
             savelog: 0  # <Булевое значение>, пока не используется
@@ -54,7 +54,7 @@ fire.yaml
             load: ['line(1,10,2m)', 'const(10,90m)']
             input_file: 'simple_get1.ammo'
             input_format: 'plain'
-            instances: 4000
+            instances: 1000
             # logs
             writelog: 1
             savelog: 0
@@ -82,7 +82,7 @@ offset            Булевое значение  Да           Нет        
 input_file        Строка            Да           Нет          ``-``        Абсолютный путь до файлы с запросами(ammo file).
 input_format      Строка            Нет          Нет          'plain'      Формат файла с запросами.
 loop_ammo         Булевое значение  Да           Нет          1            Если запросов в ammo файле недостаточно для покрытия схемы нагруки, использоваться ли в бесконечном цикле те же запросы.
-instances         Целове число      Да           Нет          4000         Кол-во обработчиков(воркеров) приложения Phantom.
+instances         Целове число      Да           Нет          1000         Кол-во обработчиков(воркеров) приложения Phantom.
 writelog          Булевое значение  Нет          Нет          1            ``-``
 savelog           Булевое значение  Нет          Нет          1            ``-``
 saveammo          Булевое значение  Нет          Нет          1            ``-``
