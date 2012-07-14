@@ -30,8 +30,7 @@ from firebat import __version__
 from firebat.console.conf import make_conf, get_defaults
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
-from firebat.console.cmd import get_running_jobs
-from firebat.console.aggr import process_phout
+from firebat.console.cmd import get_logger, get_running_jobs, kill_all
 
 
 def exit_err(msg):
@@ -102,15 +101,16 @@ def get_arg_parser():
                     dest='ammo_file', default=None,
                     help='path to ammo file',)
 
-    parser.add_argument('-o', '--only-prepare-stpd', action='store',
-                    dest='stpd_ammo_only', default=False,
+    parser.add_argument('-o', '--only-prepare-stpd', action='store_const',
+                    dest='stpd_ammo_only', const=True,
                     help='Only generate ammo stpd and exit',)
+
+    parser.add_argument('-k', '--kill-all', action='store_const',
+                    dest='kill_all', const=True,
+                    help='Kill all running fires and exit',)
 
     parser.add_argument('--list', action="store_const", const=True,
             help='List details of currently running fires.', dest='list_only')
-
-    parser.add_argument('--phout', action="store_const", const=True,
-            help='Parse phout file.', dest='phout')
 
     parser.add_argument('--debug', action="store_const", const=True,
             help='Whether to show debug msg in STDOUT', dest='debug')
@@ -120,33 +120,18 @@ def get_arg_parser():
     return parser
 
 
-def get_logger(args):
-    logger = logging.getLogger('firebat.console')
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    if args.debug:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s  %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
-
-
 def main():
     defaults = get_defaults()
     args = get_arg_parser().parse_args()
+    logger = get_logger(is_debug=args.debug)
+
     if args.list_only:
-        get_running_jobs()
+        get_running_jobs(logger=logger)
         sys.exit(0)
 
-    if args.phout:
-        with open('phout.txt', 'r') as phout_fh:
-            process_phout(phout_fh)
+    if args.kill_all:
+        kill_all(logger=logger)
         sys.exit(0)
-
-    logger = get_logger(args)
 
     # load job configuration
     try:
