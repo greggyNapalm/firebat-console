@@ -4,8 +4,8 @@
 import os
 import sys
 
-if not hasattr(sys, 'version_info') or sys.version_info < (2, 6, 0, 'final'):
-    raise SystemExit("Firebat requires Python 2.7 or later.")
+#if not hasattr(sys, 'version_info') or sys.version_info < (2, 6, 0, 'final'):
+#    raise SystemExit("Firebat requires Python 2.7 or later.")
 
 try:
         from setuptools import setup
@@ -70,6 +70,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         "Topic :: Software Development :: Testing :: Traffic Generation",
     ],
