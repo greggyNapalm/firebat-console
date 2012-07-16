@@ -17,9 +17,10 @@ from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-import numpy
-#import simplejson as json
-#from simplejson.decoder import JSONDecodeError
+try:
+    import numpy.mean as mean
+except ImportError:
+    mean = lambda n: round(float( sum(n) / len(n)), 2)
 
 from firebat.console.stepper import series_from_schema, schema_format_err
 
@@ -220,8 +221,8 @@ class phout_stat(object):
 
                 # rtt parts
                 for part in self.rtt_fracts:
-                    mean = numpy.mean(r['rtt_fract'][part])
-                    self.rtt_fracts_series[part]['data'].append((tick, mean))
+                    mean_val = mean(r['rtt_fract'][part])
+                    self.rtt_fracts_series[part]['data'].append((tick, mean_val))
 
     def get_errno_hcds(self):
         '''Make highcharts data series for errno chart.
