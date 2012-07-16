@@ -16,7 +16,7 @@ function resp_perc_parser(s) {
         '85': '#EAAF00',
         '80': '#FF7D00',
         '75': '#FF5700',
-        '50': '#F51D30',
+        '50': '#F51D30'
     };
 
     var up_common = {
@@ -24,28 +24,28 @@ function resp_perc_parser(s) {
         color: series_color[s.name],
         marker: {
           enabled: false
-        },
+        }
     };
     $.extend(s, up_common); 
     
     if (s.name == 'rps') {
         up = {
             type: 'line',
-            yAxis: 1,
+            yAxis: 1
         };
-    } else if (parseInt(s.name) < 99) {
+    } else if (parseInt(s.name, 10) < 99) {
         up = {
             name: s.name + '%',
-            type: 'area',
+            type: 'area'
         };
-    } else if (parseInt(s.name) >= 99) {
+    } else if (parseInt(s.name, 10) >= 99) {
         up = {
             name: s.name + '%',
-            type: 'line',
+            type: 'line'
         };
     } else {
-        console.error('Unknown series name: ' + s.name)
-    };
+        console.error('Unknown series name: ' + s.name);
+    }
     
     $.extend(s, up); 
     return s;
@@ -63,9 +63,9 @@ function status_codes_parser(s) {
     // see: http://httpstatus.es/
     function color_by_name(name) {
         if (name == 'rps') {
-            return '#990000'
-        };
-        var group = parseInt(name / 100)
+            return '#990000';
+        }
+        var group = parseInt(name / 100, 10);
         if (group == 1) {
             color = '#FFE175';
         } else if (group == 2) {
@@ -78,8 +78,8 @@ function status_codes_parser(s) {
             color = '#F8584F';
         } else {
             color = '#640092';
-        };
-        return color
+        }
+        return color;
     }
 
     var up_common = {
@@ -88,22 +88,22 @@ function status_codes_parser(s) {
         //color: series_color[s.name],
         marker: {
           enabled: false
-        },
+        }
     };
     $.extend(s, up_common); 
     
     if (s.name == 'rps') {
         up = {
             type: 'line',
-            yAxis: 1,
+            yAxis: 1
         };
     } else if (s.name > 99 && s.name < 600) {
         up = {
-            type: 'area',
+            type: 'area'
         };
     } else {
-        console.error('Unknown series name: ' + s.name)
-    };
+        console.error('Unknown series name: ' + s.name);
+    }
     
     $.extend(s, up); 
     return s;
@@ -132,13 +132,13 @@ function errno_parser(s) {
         return colors;
     }
     // see: https://gist.github.com/2413028
-    var colors = generateColors(132)
+    var colors = generateColors(132);
     function color_by_name(name, colors) {
         if (name == 'rps') {
-            return '#990000'
-        };
-        color = colors[name]
-        return color
+            return '#990000';
+        }
+        color = colors[name];
+        return color;
     }
 
     var up_common = {
@@ -146,27 +146,169 @@ function errno_parser(s) {
         color: color_by_name(s.name, colors),
         marker: {
           enabled: false
-        },
+        }
     };
     $.extend(s, up_common); 
     
     if (s.name == 'rps') {
         up = {
             type: 'line',
-            yAxis: 1,
+            yAxis: 1
         };
     } else if (s.name > -1 && s.name < 200) {
         up = {
-            type: 'area',
+            type: 'area'
         };
     } else {
-        console.error('Unknown series name: ' + s.name)
-    };
+        console.error('Unknown series name: ' + s.name);
+    }
     
     $.extend(s, up); 
     return s;
 }
 
+function reply_parser(s) {
+    /* Add fields to data series object according to it's name.
+    Args:
+        s: dict, data series.
+    Returns:
+        s: dict, ready to be added highcharts data series
+           for resp_num_chart chart.
+    */
+    var series_color = {
+        'rps': '#990000',
+        'replies': '#002A8F'
+    };
+
+    var up_common = {
+        legendIndex: 0,
+        color: series_color[s.name],
+        marker: {
+          enabled: false
+        }
+    };
+    $.extend(s, up_common); 
+    
+    if (s.name == 'rps') {
+        up = {
+            name: 'request(theory)',
+            type: 'line',
+            yAxis: 1
+        };
+    } else if (s.name == 'replies') {
+        up = {
+            name: 'replies(practice)',
+            type: 'line'
+        };
+    } else {
+        console.error('Unknown series name: ' + s.name);
+    }
+    
+    $.extend(s, up); 
+    return s;
+}
+
+function txrx_parser(s) {
+    /* Add fields to data series object according to it's name.
+    Args:
+        s: dict, data series.
+    Returns:
+        s: dict, ready to be added highcharts data series
+           for Tx Rx chart.
+    */
+    var series_color = {
+        'rps': '#990000',
+        'tx': '#68B160',
+        'rx': '#002A8F'
+    };
+
+    var up_common = {
+        legendIndex: 0,
+        color: series_color[s.name],
+        marker: {
+          enabled: false
+        }
+    };
+    $.extend(s, up_common); 
+    
+    if (s.name == 'rps') {
+        up = {
+            type: 'line',
+            yAxis: 1
+        };
+    } else if (s.name == 'tx') {
+        up = {
+            type: 'line'
+        };
+    } else if (s.name == 'rx') {
+        up = {
+            type: 'line'
+        };
+    } else {
+        console.error('Unknown series name: ' + s.name);
+    }
+    
+    $.extend(s, up); 
+    return s;
+}
+
+function rtt_fracts_parser(s) {
+    /* Add fields to data series object according to it's name.
+    Args:
+        s: dict, data series.
+    Returns:
+        s: dict, ready to be added highcharts data series
+           for RTT fractions chart.
+    */
+    var series_color = {
+        'rps': '#990000',
+        'con_ms': '#68B160',
+        'send_ms': '#002A8F',
+        'proc_ms': '#F9FD5F',
+        'resp_ms': '#FF5700'
+    };
+
+    var up_common = {
+        legendIndex: 0,
+        color: series_color[s.name],
+        marker: {
+          enabled: false
+        }
+    };
+    $.extend(s, up_common); 
+    
+    if (s.name == 'rps') {
+        up = {
+            type: 'line',
+            yAxis: 1
+        };
+    } else if (s.name == 'con_ms') {
+        up = {
+            name: 'connect',
+            type: 'line'
+        };
+    } else if (s.name == 'send_ms') {
+        up = {
+            name: 'send',
+            type: 'line'
+        };
+    } else if (s.name == 'proc_ms') {
+        up = {
+            name: 'process',
+            type: 'line'
+        };
+    } else if (s.name == 'resp_ms') {
+        up = {
+            name: 'receive',
+            type: 'line'
+        };
+    } else {
+        console.error('Unknown series name: ' + s.name);
+    }
+    
+    $.extend(s, up); 
+    return s;
+}
 
 
 function base_chart(container_id, data_series, praser, opts_up) {
@@ -183,9 +325,9 @@ function base_chart(container_id, data_series, praser, opts_up) {
         'title': 'Some Title',
         //'subtitle': 'Any text here?',
         'subtitle': '',
-        'yTitle': 'Responce Everywere',
+        'yTitle': 'Response Everywere',
         'postfix': ' ppc',
-        'info_link': 'https://github.com/greggyNapalm/firebat_console',
+        'info_link': 'https://github.com/greggyNapalm/firebat_console'
     };
 
     $.extend(opts, opts_up);
@@ -195,7 +337,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
             useUTC: false
         },
         lang: {
-            infoTitle: 'info?',
+            infoTitle: 'info?'
         }
     });
     var chart;
@@ -205,7 +347,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
             zoomType: 'x',
             animation: false,
             backgroundColor: '#f9f9f9',
-            type: 'areaspline',
+            type: 'areaspline'
         },
 
         credits: {
@@ -221,7 +363,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
         },
 
         xAxis: [{
-            type: 'datetime',
+            type: 'datetime'
         }],
 
         yAxis: [{ // Primary yAxis
@@ -238,7 +380,8 @@ function base_chart(container_id, data_series, praser, opts_up) {
                 style: {
                     color: '#89A54E'
                 }
-            }
+            },
+            min: 0
         }, { // Secondary yAxis
             title: {
                 text: 'Load',
@@ -261,8 +404,8 @@ function base_chart(container_id, data_series, praser, opts_up) {
             area: {
                 fillOpacity: 1,
                 lineWidth: 0,
-                animation: false,
-            },
+                animation: false
+            }
         },
 
         tooltip: {
@@ -273,13 +416,13 @@ function base_chart(container_id, data_series, praser, opts_up) {
             shared: true,
             crosshairs: {
                 color: 'black',
-                dashStyle: 'solid',
+                dashStyle: 'solid'
             },
             formatter: function() {
-                var point = this.points[this.points.length-1]
+                var point = this.points[this.points.length-1];
                 //return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + this.points[2].y + ' rps';
                 return Highcharts.dateFormat('%B %e, %H:%M:%S', this.x) + '<br>' + point.y + ' rps';
-            },
+            }
         },
 
         exporting: {
@@ -292,7 +435,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
                     hoverSymbolFill: '#779ABF',
                     _titleKey: 'infoTitle',
                     onclick: function() {
-                        window.open(opts.info_link)
+                        window.open(opts.info_link);
                     }
                 }
             }
@@ -303,9 +446,9 @@ function base_chart(container_id, data_series, praser, opts_up) {
         if (s.name != 'rps') {
             //console.info(s.name, s.data[55], s.data[56], s.data[57]);
             $.each(s.data, function(idx, value) {
-                value[0] = value[0]*1000  // make js time stamp from epoach
+                value[0] = value[0]*1000;  // make js time stamp from epoach
             });
-        };
+        }
         chart.addSeries(praser(s));
     });
 }
