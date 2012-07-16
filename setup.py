@@ -4,7 +4,7 @@
 import os
 import sys
 
-if not hasattr(sys, 'version_info') or sys.version_info < (2, 7, 0, 'final'):
+if not hasattr(sys, 'version_info') or sys.version_info < (2, 6, 0, 'final'):
     raise SystemExit("Firebat requires Python 2.7 or later.")
 
 try:
