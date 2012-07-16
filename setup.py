@@ -18,7 +18,7 @@ install_requirements = [
     'PyYAML',
     'jinja2',
     'progressbar',
-    'numpy',
+    #'numpy',
 ]
 
 with open("README.rst") as f:
