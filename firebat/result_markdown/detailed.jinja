@@ -1,10 +1,10 @@
 {% extends "base.jinja" %}
 {% set title = 'Detailed result' %}
 {% set header = 'Detailed result' %}
-{% block content %}
+{% block content -%}
     <br>
 
-    <!-- Responce latency percentiles -->
+    <!-- Response latency percentiles -->
     <div class="span4">
       <h3>Times for period</h3>
       <table class="table table-bordered" style="width: auto;white-space: nowrap;">
@@ -17,14 +17,14 @@
         </tr>
       </thead>
       <tbody>
-      {% for item in boundaries|dictsort %}
+      {% for item in boundaries|dictsort -%}
         <tr>
           <td>{{ item[1].perc_above }}% < {{ item[0] }} ms</td>
           <td>{{ item[1].num }}</td>
           <td>{{ item[1].percentil }}%</td>
           <td>{{ item[1].btw }}</td>
         </tr>
-      {% endfor %}
+      {% endfor -%}
       </tbody>
       </table>
     </div>
@@ -41,13 +41,13 @@
         </tr>
       </thead>
       <tbody>
-      {% for item in codes_tbl|dictsort %}
+      {% for item in codes_tbl|dictsort -%}
         <tr>
           <td><code style="color: #000;">{{ item[0] }} {{ item[1].msg }}</td>
           <td>{{ item[1].percentil }}%</td>
           <td>{{ item[1].num }}</td>
         </tr>
-      {% endfor %}
+      {% endfor -%}
       </tbody>
       </table>
     </div>
@@ -64,14 +64,81 @@
         </tr>
       </thead>
       <tbody>
-      {% for item in errno_tbl|dictsort %}
+      {% for item in errno_tbl|dictsort -%}
         <tr>
           <td><code style="color: #000;">{{ item[0] }} {{ item[1].msg }}</td>
           <td>{{ item[1].percentil }}%</td>
           <td>{{ item[1].num }}</td>
         </tr>
-      {% endfor %}
+      {% endfor -%}
       </tbody>
       </table>
     </div>
+    <div class="span12" id="txrx_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+    <div class="span12" id="resp_num_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+    <div class="span12" id="rtt_fracts_chart" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 {% endblock content %}
+{% block js -%}
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/modules/exporting.js"></script>
+    <script src="./js/firebat/init.js"></script>
+    <script src="./js/firebat/data_series1.js"></script>
+<script type="text/javascript">
+$(function () {
+    $(document).ready(function() {
+        $.each(rps_series.data, function(idx, value) {
+            value[0] = value[0]*1000  // make js time stamp from epoach
+        });
+
+        function get_rps_series() {
+            // copy rps_series data struct to make it uniq for each chart. 
+            var rps_series_tmp = {};
+            $.extend(true, rps_series_tmp, rps_series);
+            return rps_series_tmp;
+        }
+
+        // process tx/rx chart
+        var txrx_opts = {
+            'title': 'Sum Tx Rx per second',
+            'yTitle': 'Bytes',
+            'postfix': '',
+        };
+        var txrx_series = [
+            tx_series,
+            rx_series, 
+            get_rps_series()
+        ];
+        base_chart('txrx_chart', txrx_series, txrx_parser, txrx_opts);
+
+        // process responses chart
+        var reply_opts = {
+            'title': 'Response per second',
+            'yTitle': 'Number',
+            'postfix': '',
+        };
+        
+        var my_reply_series = [
+            reply_series,
+            get_rps_series()
+        ];
+        base_chart('resp_num_chart', my_reply_series, reply_parser, reply_opts);
+
+        // rtt fractions chart
+        var rtt_fracts_opts = {
+            'title': 'avg. RTT fractions',
+            'yTitle': 'Milliseconds',
+            'postfix': ' ms',
+        };
+        
+        var rtt_fracts_series = [
+            con_ms_series,
+            send_ms_series,
+            proc_ms_series,
+            resp_ms_series,
+            get_rps_series()
+        ];
+        base_chart('rtt_fracts_chart', rtt_fracts_series, rtt_fracts_parser, rtt_fracts_opts);
+    });
+});
+</script>
+{% endblock js -%}

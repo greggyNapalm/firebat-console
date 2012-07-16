@@ -50,7 +50,7 @@
               <br>
               <h4>Resp percentiles</h4>
               {% for item in boundaries|dictsort %}
-              {{ "%.2f%%"|format(item[1].perc_above) }}% < {{ item[0] }} ms<br>
+                {{ "%.2f%%"|format(item[1].perc_above) }}% < {{ item[0] }} ms<br>
               {% endfor %}
           </div><!-- /.span -->
           <div class="span8">

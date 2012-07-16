@@ -27,11 +27,10 @@
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
     <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
     <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
-    {% block head %}{% endblock head %}
+    {% block head -%}{% endblock head -%}
   </head>
 
   <body>
-
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
@@ -51,16 +50,11 @@
         </div>
       </div>
     </div>
-
     <div class="container">
-      
       <h1>{{ header }}</h1>
-      <!--
-      <p>Ниже преведены графики такие-то.</p>
-      -->
-    {% block container %}{% endblock container %}
+    {% block container -%}{% endblock container -%}
     </div> <!-- /container -->
-    {% block content %}{% endblock content %}
+    {% block content -%}{% endblock content -%}
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
@@ -77,6 +71,6 @@
     <script src="./js/bootstrap-collapse.js"></script>
     <script src="./js/bootstrap-carousel.js"></script>
     <script src="./js/bootstrap-typeahead.js"></script>
-    {% block js %}{% endblock js %}
+    {% block js -%}{% endblock js -%}
   </body>
 </html>
