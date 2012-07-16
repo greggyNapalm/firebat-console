@@ -12,20 +12,16 @@ import os
 import sys
 import time
 import signal
+import socket
 import getpass
 import logging
-import simplejson as json
+import json
 import datetime
 import cPickle
 import base64
 from string import maketrans
 from subprocess import Popen, PIPE
 
-from simplejson.decoder import JSONDecodeError
-
-# const
-#PID_FILE = './fire.pid'
-#PHANTOM_PID_FILE = './phantom.pid'
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
 
 
@@ -166,29 +162,20 @@ def update_fire(status, json_path='.fire.json', logger=None):
             fire = json.loads(fire_fh.read())
     except IOError, e:
         logger.error('Could not read "%s": %s\n' % (json_path, e))
-    except JSONDecodeError, e:
+    except ValueError, e:
         logger.error('Could not parse fire config file: %s\n%s' % (json_path,
                                                                    e))
     fire['owner'] = status.owner
     fire['uid'] = status.uid
     fire['total_dur'] = status.total_dur
     fire['started_at'] = status.started_at.strftime('%s')
+    fire['src_host'] = socket.getfqdn()
     new_cfg = json.dumps(fire, indent=4 * ' ')
     try:
         with open(new_path, "w+") as fire_fh:
             fire_fh.write(new_cfg)
     except IOError, e:
         logger.error('Could not write "%s": %s\n' % (new_path, e))
-
-#def update_fire(status, json_path='.fire.json'):
-#    with open(json_path, "r+") as fire_fh:
-#        fire = json.loads(fire_fh.read())
-#        fire['owner'] = status.owner
-#        fire['uid'] = status.uid
-#        fire['started_at'] = status.started_at.strftime('%s')
-#        new_cfg = json.dumps(fire)
-#        fire_fh.truncate(0)
-#        fire_fh.write(new_cfg)
 
 
 def run_phantom(status, sleep_time=1, logger=None):
@@ -218,7 +205,6 @@ def run_phantom(status, sleep_time=1, logger=None):
             status.stderr = job.stderr.read()
             status.state = 'phantom exited'
             logger.debug('phantom exited with retcode: %s' % retcode)
-            #sys.stdout.write(str(status.jsonify()) + '\n')
             break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)

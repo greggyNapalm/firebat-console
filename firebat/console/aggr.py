@@ -12,13 +12,14 @@ import sys
 import string
 import datetime
 import logging
+import json
 from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import numpy
-import simplejson as json
-from simplejson.decoder import JSONDecodeError
+#import simplejson as json
+#from simplejson.decoder import JSONDecodeError
 
 from firebat.console.stepper import series_from_schema, schema_format_err
 
@@ -318,11 +319,15 @@ def get_fire(json_path='.fire_up.json'):
 
     try:
         with open(json_path, 'r') as fire_fh:
-            return json.loads(fire_fh.read())
+            fire = json.loads(fire_fh.read())
+            return fire
+            #return json.loads(fire_fh.read())
     except IOError, e:
         exit_err('Could not read "%s": %s\n' % (json_path, e))
-    except JSONDecodeError, e:
+    except ValueError, e:
         exit_err('Could not parse fire config file: %s\n%s' % (json_path, e))
+    #except JSONDecodeError, e:
+    #    exit_err('Could not parse fire config file: %s\n%s' % (json_path, e))
 
 
 def validate_bound(bound):
@@ -435,6 +440,7 @@ def get_pages_context(stat, fire):
     '''
     ctx = {}
     ctx['tgt_addr'] = fire.get('addr')
+    ctx['src_host'] = fire.get('src_host')
     ctx['load'] = fire['load']
     ctx['tags'] = fire.get('tag')
 
@@ -497,8 +503,11 @@ def process_phout(phout_fh, points_num=200, dst_file='data_series.js',
         l_spltd = l.split()
         # in phantom v.14 line have 12 fields, @see:
         # http://phantom-doc-ru.rtfd.org/en/latest/analyzing_result_data.html
+        if len(l_spltd) == 11:  # No tag may be paserd in different ways
+            l_spltd.insert(1, None)
         if len(l_spltd) != 12:
             print 'Malformed line in phout file: %s' % l
+            print l_spltd
         epoch, tag, rtt, con_mcs, send_mcs, proc_mcs, resp_mcs, phantom_exec, \
             req_byte, resp_byte, errno, http_status = l_spltd
         epoch = int(epoch.split('.')[0])  # cut out fractional part of epoach

@@ -10,10 +10,9 @@ Command line interface for Firebat.
 import os
 import signal
 import logging
+import json
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
-
-import simplejson as json
 
 
 def get_logger(is_debug=False):
@@ -78,7 +77,7 @@ def get_fire_info(pid, dumps_pth='/tmp', logger=None):
         state = json.loads(state_json)
     except IOError as e:
         logger.error('Can\'t read state dump from: %s' % path)
-    except json.decoder.JSONDecodeError, e:
+    except ValueError, e:
         logger.error('Can\'t parse fire status data geted from: %s\n%s' %\
                      (path, e))
     return state

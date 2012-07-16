@@ -73,7 +73,13 @@ def parse_schema(schema):
         schema_format_err(schema, msg=', Schema shud be list')
     if schema[0] == 'const':
         rps, duration_s = schema[-2:]
-        if not (isinstance(rps, int) and isinstance(duration_s, str)):
+        # from simplejson 2.0.1 we have unicode instead bytestr
+        if isinstance(duration_s, unicode):
+            duration_s = duration_s.encode('utf-8')
+        elif not isinstance(duration_s, basestring):
+            schema_format_err(schema)
+
+        if not isinstance(rps, int):
             schema_format_err(schema)
 
         result = {
@@ -86,8 +92,13 @@ def parse_schema(schema):
         rps_from, rps_to, step_size, step_dur = schema[-4:]
         if not (isinstance(rps_from, int) and\
                 isinstance(rps_to, int) and\
-                isinstance(step_size, int) and\
-                isinstance(step_dur, str)):
+                isinstance(step_size, int)):
+            schema_format_err(schema)
+
+        # from simplejson 2.0.1 we have unicode instead bytestr
+        if isinstance(step_dur, unicode):
+            step_dur = step_dur.encode('utf-8')
+        elif not isinstance(step_dur, basestring):
             schema_format_err(schema)
 
         if (rps_from > rps_to) or (step_size <= 0):
@@ -108,13 +119,20 @@ def parse_schema(schema):
     elif schema[0] == 'line':
         rps_from, rps_to, duration = schema[-3:]
         if not (isinstance(rps_from, int) and\
-                isinstance(rps_to, int) and\
-                isinstance(duration, str)):
+                isinstance(rps_to, int)): 
+            schema_format_err(schema)
+
+        # from simplejson 2.0.1 we have unicode instead bytestr
+        if isinstance(duration, unicode):
+            duration_s = duration.encode('utf-8')
+        elif not isinstance(duration, basestring):
             schema_format_err(schema)
 
         if (rps_from > rps_to):
             schema_format_err(schema, msg=', only growing load allowed')
 
+        if isinstance(duration,  unicode):
+            duration = duration.encode('utf-8')
         result = {
             'format': 'line',
             'rpms_from': rps_from / 1000.0,
