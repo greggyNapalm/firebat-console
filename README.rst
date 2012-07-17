@@ -47,6 +47,11 @@ Screenshots
 .. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss12.png
 .. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss13.png
 
+Issues
+------
+
+Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/phantom_doc/issues/>`. Patches welcome!
+
 License
 -------
-BSD
+BSD `Read more <http://opensource.org/licenses/BSD-3-Clause>`_
