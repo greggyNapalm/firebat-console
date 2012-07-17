@@ -43,6 +43,7 @@ Development version:
 Screenshots
 -----------
 
+`Demo page <http://fire-demo.appspot.com/f/index.html/>`_
 .. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss11.png
 .. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss12.png
 .. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss13.png
