@@ -52,7 +52,7 @@ Screenshots
 Issues
 ------
 
-Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/phantom_doc/issues/>`_. Patches welcome!
+Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/firebat_console/issues/>`_. Patches welcome!
 
 License
 -------
