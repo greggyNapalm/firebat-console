@@ -52,7 +52,7 @@ def get_running_fires(pids_path='/tmp/fire/', logger=None):
         return
 
     for pid_file in os.listdir(pids_path):
-        with open(pids_path + pid_file, "r") as pid_fh:
+        with open(pids_path + pid_file, 'r') as pid_fh:
             pid = int(pid_fh.read())
         if os.path.exists('/proc/%s' % pid):
             yield pid
@@ -74,7 +74,7 @@ def get_fire_info(pid, dumps_pth='/tmp', logger=None):
     state = None
     try:
         path = '%s/%s.fire' % (dumps_pth, pid)
-        with open(path) as state_fh:
+        with open(path, 'r') as state_fh:
             state_json = state_fh.read()
         state = json.loads(state_json)
     except IOError as e:
