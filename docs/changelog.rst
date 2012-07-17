@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.10
+====
+
+* New charts added: Avg Tx Rx, Req/Resp, RTT fractions
+* Web based report optimized
+
 0.9
 ===
 
