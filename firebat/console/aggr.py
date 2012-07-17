@@ -12,11 +12,12 @@ import sys
 import string
 import datetime
 import logging
-import json
 from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+import simplejson as json
+from simplejson.decoder import JSONDecodeError
 try:
     import numpy.mean as mean
 except ImportError:
@@ -320,15 +321,11 @@ def get_fire(json_path='.fire_up.json'):
 
     try:
         with open(json_path, 'r') as fire_fh:
-            fire = json.loads(fire_fh.read())
-            return fire
-            #return json.loads(fire_fh.read())
+            return json.loads(fire_fh.read())
     except IOError, e:
         exit_err('Could not read "%s": %s\n' % (json_path, e))
-    except ValueError, e:
+    except JSONDecodeError, e:
         exit_err('Could not parse fire config file: %s\n%s' % (json_path, e))
-    #except JSONDecodeError, e:
-    #    exit_err('Could not parse fire config file: %s\n%s' % (json_path, e))
 
 
 def validate_bound(bound):

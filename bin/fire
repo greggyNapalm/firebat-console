@@ -20,11 +20,11 @@ import getpass
 import cPickle
 import commands
 import copy
-import json
 import base64
 from progressbar import Bar, ProgressBar, Percentage, ETA
 
 import yaml
+import simplejson as json
 
 from firebat import __version__
 from firebat.console.conf import make_conf, get_defaults
