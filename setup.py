@@ -18,6 +18,7 @@ install_requirements = [
     'PyYAML',
     'jinja2',
     'progressbar',
+    'simplejson',
     #'numpy',
 ]
 
