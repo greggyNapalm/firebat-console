@@ -8,9 +8,9 @@ import sys
 #    raise SystemExit("Firebat requires Python 2.7 or later.")
 
 try:
-        from setuptools import setup
+    from setuptools import setup
 except ImportError:
-        from distutils.core import setup
+    from distutils.core import setup
 
 from firebat import __version__
 
@@ -19,6 +19,7 @@ install_requirements = [
     'jinja2',
     'progressbar',
     'simplejson',
+    'pyzmq',
     #'numpy',
 ]
 

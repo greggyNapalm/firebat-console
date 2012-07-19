@@ -23,6 +23,7 @@ from subprocess import Popen, PIPE
 
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
+import zmq
 
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
 
@@ -67,6 +68,16 @@ class FireStatus(object):
         self.retcode = None
         self.stdout = None
         self.stderr = None
+        #
+        self.sock_dir = '/tmp/fire/sock'
+        if not os.path.exists(self.sock_dir):
+            os.makedirs(self.sock_dir)
+
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUB)
+        self.socket.bind('ipc://%s/%s.sock' % (self.sock_dir, self.pid))
+        #self.socket.bind('ipc://%s.sock' % self.pid)
+
 
     def duration_update(self):
         delta = datetime.datetime.now() - self.started_at
@@ -110,6 +121,11 @@ class FireStatus(object):
         file_path = '/tmp/%s.fire' % self.pid
         file(file_path, 'w').write(str(self.jsonify()))
         return file_path
+
+    def mq_pub(self):
+        '''Doc will be here'''
+        self.socket.send(self.jsonify())
+        #self.socket.send(str(self.pid) + ' ' + str(self.jsonify()))
 
 
 def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
@@ -210,7 +226,7 @@ def run_phantom(status, sleep_time=1, logger=None):
             break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
-
+            status.mq_pub()
 
 def run_supervisor():
     '''Shud be called in new daemon process to run and check phantom tool

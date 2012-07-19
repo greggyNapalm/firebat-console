@@ -30,7 +30,7 @@ from firebat import __version__
 from firebat.console.conf import make_conf, get_defaults
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
-from firebat.console.cmd import get_logger, get_running_jobs, kill_all
+from firebat.console.cmd import get_logger, list_running_jobs, kill_all
 
 
 def exit_err(msg):
@@ -126,7 +126,7 @@ def main():
     logger = get_logger(is_debug=args.debug)
 
     if args.list_only:
-        get_running_jobs(logger=logger)
+        list_running_jobs(logger=logger)
         sys.exit(0)
 
     if args.kill_all:
