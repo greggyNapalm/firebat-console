@@ -56,4 +56,11 @@ Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/fire
 
 License
 -------
+Major components:
+
+* jQuery: MIT/GPL license.
+* Highcharts: Creative Commons Attribution-NonCommercial 3.0 License.
+* Twitter Bootstrap: Apache License, Version 2.0
+
+Everything else:
 BSD `Read more <http://opensource.org/licenses/BSD-3-Clause>`_
