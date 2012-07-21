@@ -77,17 +77,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/firebat_console.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/firebat-console.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/firebat_console.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/firebat-console.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/firebat_console"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/firebat_console"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/firebat-console"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/firebat-console"
 	@echo "# devhelp"
 
 epub:

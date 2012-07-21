@@ -1,8 +1,8 @@
 Firebat-console
 ===============
-.. image:: https://secure.travis-ci.org/greggyNapalm/firebat_console.png?branch=master
+.. image:: https://secure.travis-ci.org/greggyNapalm/firebat-console.png?branch=master
    :alt: Build Status
-   :target: https://secure.travis-ci.org/greggyNapalm/firebat_console
+   :target: https://secure.travis-ci.org/greggyNapalm/firebat-console
 
 Firebat is console based utility library for Phantom I/O engine. Create and launch tests, analyze results.
 
@@ -36,7 +36,7 @@ Development version:
 
 ::
 
-    pip install -e git+git://github.com/greggyNapalm/firebat_console.git#egg=firebat-console
+    pip install -e git+git://github.com/greggyNapalm/firebat-console.git#egg=firebat-console
 
 
 
@@ -45,14 +45,14 @@ Screenshots
 
 `Demo page <http://fire-demo.appspot.com/f/index.html>`_
 
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss11.png
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss12.png
-.. image:: https://github.com/greggyNapalm/firebat_console/raw/ru_sphinx_doc/docs/img/ss13.png
+.. image:: https://github.com/greggyNapalm/firebat-console/raw/ru_sphinx_doc/docs/img/ss11.png
+.. image:: https://github.com/greggyNapalm/firebat-console/raw/ru_sphinx_doc/docs/img/ss12.png
+.. image:: https://github.com/greggyNapalm/firebat-console/raw/ru_sphinx_doc/docs/img/ss13.png
 
 Issues
 ------
 
-Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/firebat_console/issues/>`_. Patches welcome!
+Find a bug? Want a feature? Submit an `here <http://github.com/greggyNapalm/firebat-console/issues/>`_. Patches welcome!
 
 License
 -------

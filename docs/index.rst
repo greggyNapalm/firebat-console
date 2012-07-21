@@ -7,9 +7,9 @@
 :Version: |release|
 :Date: |today|
 :Homepage: `Firebat console Homepage
- <https://github.com/greggyNapalm/firebat_console>`_
+ <https://github.com/greggyNapalm/firebat-console>`_
 :Download: `Firebat console on GitHub
- <https://github.com/greggyNapalm/firebat_console>`_
+ <https://github.com/greggyNapalm/firebat-console>`_
 :Documentation: `PDF Documentation
  <http://media.readthedocs.org/pdf/firebat-console/latest/firebat-console.pdf>`_
 :License: `BSD License
@@ -17,7 +17,7 @@
 :Support: `Google Group
  <https://groups.google.com/d/forum/phantom_doc>`_
 :Issue tracker: `GitHub Issues
- <https://github.com/greggyNapalm/firebat_console/issues>`_
+ <https://github.com/greggyNapalm/firebat-console/issues>`_
 
 .. toctree ::
     :maxdepth: 2

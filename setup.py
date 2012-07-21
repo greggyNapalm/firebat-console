@@ -37,7 +37,7 @@ setup(
     description='Console helpers for Phantom load tool',
     long_description=README + '\n' + CHANGES,
     license='BSD',
-    url='https://github.com/greggyNapalm/firebat_console',
+    url='https://github.com/greggyNapalm/firebat-console',
     keywords=['phantom', 'firebat'],
     scripts=[
         "bin/fire",

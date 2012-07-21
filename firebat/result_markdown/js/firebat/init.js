@@ -327,7 +327,7 @@ function base_chart(container_id, data_series, praser, opts_up) {
         'subtitle': '',
         'yTitle': 'Response Everywere',
         'postfix': ' ppc',
-        'info_link': 'https://github.com/greggyNapalm/firebat_console'
+        'info_link': 'https://github.com/greggyNapalm/firebat-console'
     };
 
     $.extend(opts, opts_up);
