@@ -27,7 +27,7 @@ import yaml
 import simplejson as json
 
 from firebat import __version__
-from firebat.console.conf import make_conf, get_defaults
+from firebat.console.conf import make_conf, get_defaults, get_main_cfg
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
 from firebat.console.cmd import get_logger, list_running_jobs, kill_all
@@ -53,7 +53,7 @@ def validate_dict(d, req):
         raise ValueError('You missed required options in conf: %s' % diff)
 
 
-def __build_path(orig_wd, config, fire, time):
+def build_path(orig_wd, config, fire, time):
     test_path = orig_wd + '/'
     test_path += config['title']['task'] + '_'
     test_path += getpass.getuser() + '_'
@@ -76,13 +76,16 @@ def start_daemon(fire):
     status, exec_path = commands.getstatusoutput('which %s' % exec_name)
     if status != 0:
         raise ValueError('Can\'t find executable: %s' % exec_name)
+
     opts = {
         'owner': fire.get('owner', 'uid'),
         'total_dur': fire['total_dur'] / 1000,  # in seconds
     }
+    if 'autostop' in fire:
+        opts['autostop'] = fire['autostop']
     opts_str = base64.b64encode(cPickle.dumps(opts))
+
     cmd = 'start-stop-daemon --start --quiet --background'
-    #cmd += ' --make-pidfile %s' % pid_file
     cmd += ' --pidfile /None_existent'
     cmd += ' --chdir %s' % fire['wd']
     cmd += ' --exec %s -- %s' % (exec_path, opts_str)
@@ -124,6 +127,7 @@ def main():
     defaults = get_defaults()
     args = get_arg_parser().parse_args()
     logger = get_logger(is_debug=args.debug)
+    main_cfg = get_main_cfg(logger=logger)
 
     if args.list_only:
         list_running_jobs(logger=logger)
@@ -132,6 +136,9 @@ def main():
     if args.kill_all:
         kill_all(logger=logger)
         sys.exit(0)
+
+    if not main_cfg:
+        logger.warning('No valid main cfg, can\'t call remote API.')
 
     # load job configuration
     try:
@@ -166,17 +173,15 @@ def main():
             else:
                 ammo_path = f['input_file']
 
-        total_dur = fire_duration(f)
-        f['total_dur'] = total_dur
-        pbar_max = total_dur
+        pbar_max = f['total_dur'] = fire_duration(f)
         widgets = [Percentage(), Bar(), ETA(), ]
         pbar = ProgressBar(widgets=widgets, maxval=pbar_max).start()
 
-        job_path = __build_path(orig_wd, config, f, now)
-        f['wd'] = job_path
+        # create working directory for fire(jobs) and chdir to it.
+        f['wd'] = build_path(orig_wd, config, f, now)
         config['fire'][idx] = copy.copy(f)
-        os.makedirs(job_path)
-        os.chdir(job_path)
+        os.makedirs(f['wd'])
+        os.chdir(f['wd'])
 
         fire_json = json.dumps(config['fire'][idx], indent=4 * ' ')
         with open('.fire.json', 'w+') as fire_fh:

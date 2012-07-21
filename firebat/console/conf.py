@@ -17,6 +17,8 @@ import logging
 from jinja2 import Template
 import yaml
 
+from cmd import get_logger
+
 
 def exit_err(msg):
     logger = logging.getLogger('firebat.console')
@@ -104,9 +106,10 @@ def make_conf(fire_cfg, **kwargs):
         conf['target_ip_addr'] = addr
         conf['target_tcp_port'] = port
     else:
-        __msg = 'Incorrent config option: \'%s\' > \'network_proto\'' % conf['name']
-        logger.error(__msg)
-        raise NameError(__msg)
+        msg = 'Incorrent config option: \'%s\' > \'network_proto\'' %\
+              conf['name']
+        logger.error(msg)
+        raise NameError(msg)
 
     if conf['transport_proto'] == 'ssl':
         conf['ssl_enabled'] = True
@@ -137,3 +140,31 @@ def get_defaults():
         exit_err('Could not parse *defaults* config file: %s\n%s' %\
                 (defaults_conf_path, e))
     return config
+
+
+def locate_main_cfg():
+    path = [os.path.expanduser('~') + '/.fireconfig', '/etc/firebat/main.yaml']
+    for p in path:
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def get_main_cfg(logger=None):
+    logger = logging.getLogger('firebat.console')
+    if not logger.handlers:
+        logger = get_logger()
+
+    cfg_path = locate_main_cfg()
+    if cfg_path:
+        logger.debug('Main cfg file: %s' % cfg_path)
+        try:
+            with open(cfg_path, 'r') as conf_fh:
+                config = yaml.load(conf_fh)
+                return config
+        except IOError, e:
+            exit_err('Could not read "%s": %s\n' % (cfg_path, e))
+        except yaml.scanner.ScannerError, e:
+            exit_err('Could not parse *main* config file: %s\n%s' %\
+                    (cfg_path, e))
+    return None

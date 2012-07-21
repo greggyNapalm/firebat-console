@@ -20,12 +20,15 @@ import simplejson as json
 from simplejson.decoder import JSONDecodeError
 import zmq
 
+
 def get_wb_by_pid(pid):
+    '''Return POSIX process working directory'''
     cmd = 'readlink -e /proc/%s/cwd' % pid
     status, stdout = commands.getstatusoutput(cmd)
     if status == 0:
         return stdout
     return None
+
 
 def get_logger(is_debug=False):
     '''Return logger obj with console hendler.
@@ -91,7 +94,7 @@ def get_fire_info1(pid, logger=None, sock_dir='/tmp/fire/sock'):
     work_receiver = context.socket(zmq.PULL)
     addr = 'ipc://%s/%s.sock' % (sock_dir, pid)
     work_receiver.connect(addr)
-    
+
     poller = zmq.Poller()
     poller.register(work_receiver, zmq.POLLIN)
     socks = dict(poller.poll(1500))  # in milliseconds
@@ -101,7 +104,7 @@ def get_fire_info1(pid, logger=None, sock_dir='/tmp/fire/sock'):
                 msg = work_receiver.recv(zmq.NOBLOCK)
                 state = json.loads(msg)
             except JSONDecodeError, e:
-                logger.error('Can\'t parse fire status data geted' + 
+                logger.error('Can\'t parse fire status data geted' +
                         ' from: %s\n%s' % (pid, e))
     else:
         logger.error('Time out waiting state msg from fire PID: %s' % pid)
@@ -197,6 +200,6 @@ def kill_all(pids_path='/tmp/fire/', logger=None):
                 msg = 'Killed successfully.'
                 break
         logger.info('`-> %s' % msg)
-                
+
     if cnt == 0:
         logger.info('Nothing to kill.')

@@ -68,7 +68,12 @@ class FireStatus(object):
         self.retcode = None
         self.stdout = None
         self.stderr = None
-        #
+
+        astop_mtime = opts['autostop'].get('answ_mod_to', None)
+        if astop_mtime:
+            self.astop_mtime = astop_mtime
+
+        # use unix socket with zmq for IPC
         self.sock_dir = '/tmp/fire/sock'
         if not os.path.exists(self.sock_dir):
             os.makedirs(self.sock_dir)
@@ -76,26 +81,25 @@ class FireStatus(object):
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
         self.socket.bind('ipc://%s/%s.sock' % (self.sock_dir, self.pid))
-        #self.socket.bind('ipc://%s.sock' % self.pid)
-
 
     def duration_update(self):
         delta = datetime.datetime.now() - self.started_at
         self.duration = delta.seconds
 
-    def log_mtime_update(self):
+    def log_mtime_update(self, log_path='./answ.txt'):
         '''Check when Phantom write one of his log files last time,
         helps to check, is Phantom alive or not.'''
-        log_path = './answ.txt'
+        #log_path = './answ.txt'
         try:
             mtime = os.path.getmtime(log_path)
             self.answ_mtime = time.ctime(mtime)
             delta = datetime.datetime.now() -\
                 datetime.datetime.fromtimestamp(int(mtime))
             self.answ_mago = delta.seconds
+            return self.answ_mago
 
         except OSError:
-            self.logger.error('Can\'t read mtime of file: %s' % log_path)
+            self.logger.warning('Can\'t read mtime of file: %s' % log_path)
 
     def jsonify(self):
         '''Represent collected data in human readable format'''
@@ -123,9 +127,8 @@ class FireStatus(object):
         return file_path
 
     def mq_pub(self):
-        '''Doc will be here'''
+        '''Pub current status to subscr trough unix domain socket'''
         self.socket.send(self.jsonify())
-        #self.socket.send(str(self.pid) + ' ' + str(self.jsonify()))
 
 
 def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
@@ -223,10 +226,17 @@ def run_phantom(status, sleep_time=1, logger=None):
             status.stderr = job.stderr.read()
             status.state = 'phantom exited'
             logger.debug('phantom exited with retcode: %s' % retcode)
-            break
+            return 0
+            #break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
             status.mq_pub()
+            if status.log_mtime_update() > status.astop_mtime:
+                logger.error('phantom answ file hasn\'t been updated to long')
+                logger.error('Try to stop the fire')
+                job.kill()
+                return 1
+
 
 def run_supervisor():
     '''Shud be called in new daemon process to run and check phantom tool
@@ -260,10 +270,18 @@ def run_supervisor():
         return
 
     signal.signal(signal.SIGUSR1, sig_usr1_handler)
-    run_phantom(status, logger=logger)
+    end_status = run_phantom(status, logger=logger)
 
     logger.debug(str(status.jsonify()))
     os.unlink(pid_p)
+
+    if end_status == 0:
+        logger.info('Phantom job completed normally.')
+    elif end_status == 1:
+        logger.info('Phantom was killed by supervisor, reason:answ file mtime')
+    elif status.retcode == -9:
+        logger.info('Phantom was killed by user')
+
     logger.info('Exiting')
 
 if __name__ == '__main__':
