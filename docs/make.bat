@@ -99,9 +99,9 @@ if "%1" == "qthelp" (
 	echo.
 	echo.Build finished; now you can run "qcollectiongenerator" with the ^
 .qhcp project file in %BUILDDIR%/qthelp, like this:
-	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\firebat_console.qhcp
+	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\firebat-console.qhcp
 	echo.To view the help file:
-	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\firebat_console.ghc
+	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\firebat-console.ghc
 	goto end
 )
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# firebat_console documentation build configuration file, created by
+# firebat-console documentation build configuration file, created by
 # sphinx-quickstart on Mon Jun 25 13:49:46 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -40,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'firebat_console'
+project = u'firebat-console'
 copyright = u'2012, Gregory Komissarov'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'firebat_consoledoc'
+htmlhelp_basename = 'firebat-consoledoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'firebat_console.tex', u'firebat\\_console Documentation',
+  ('index', 'firebat-console.tex', u'firebat\\_console Documentation',
    u'Gregory Komissarov', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'firebat_console', u'firebat_console Documentation',
+    ('index', 'firebat-console', u'firebat-console Documentation',
      [u'Gregory Komissarov'], 1)
 ]
 
@@ -227,8 +227,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'firebat_console', u'firebat_console Documentation',
-   u'Gregory Komissarov', 'firebat_console', 'One line description of project.',
+  ('index', 'firebat-console', u'firebat-console Documentation',
+   u'Gregory Komissarov', 'firebat-console', 'One line description of project.',
    'Miscellaneous'),
 ]
 

@@ -12,7 +12,7 @@ fire.yaml
 Пример
 ------
 
-`Актуальная версия <https://raw.github.com/greggyNapalm/firebat_console/master/fire.default.yaml>`_
+`Актуальная версия <https://raw.github.com/greggyNapalm/firebat-console/master/fire.default.yaml>`_
 
 .. code-block:: yaml
 
@@ -32,7 +32,7 @@ fire.yaml
             time_periods: [10, 45, 50, 100, 150, 300, 500, '1s', 1500, '2s', '3s', '10s']  # <Список>, периоды времени по которым будут агрегироваться результаты
             load: [['line', 1000, 5000, '10m'], ['const', 5000, '30m'], ['step', 1, 51, 5, '2m']]  # <Список>, последовательно перечисленные схемы нагрузки, определяют длительность и интенсивность.
             offset: 133  # <Целое число>, номер миллисекунды от начала теста в которую будет подан первый запрос из схемы.
-            input_file: '/Users/gkomissarov/docs/vcs/my-github/firebat_console/test.ammo'  # <Строка>, Абсолютный путь до файлы с запросами(ammo file).
+            input_file: '/Users/gkomissarov/docs/vcs/my-github/firebat-console/test.ammo'  # <Строка>, Абсолютный путь до файлы с запросами(ammo file).
             input_format: 'plain'  # <Строка>, формат файла с запросами. На данный момент, только, 'plain'.
             loop_ammo: 1  # <Булевое значение>, Если запросов в ammo файле недостаточно для покрытия схемы нагруки, использоваться ли в бесконечном цикле те же запросы.
             instances: 1000  # <Целое число>, Кол-во обработчиков(воркеров) приложения Phantom. Читай `документацию фантома <http://phantom-doc-ru.readthedocs.org/en/latest/writing-a-phantom-conf.html#phantom-conf>`_

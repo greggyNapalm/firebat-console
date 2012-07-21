@@ -7,12 +7,12 @@ Smoke test
 Копируем код из репозитория
 ::
 
-    git clone git://github.com/greggyNapalm/firebat_console.git
+    git clone git://github.com/greggyNapalm/firebat-console.git
 
 открываем два терминала и в обоих переходим в каталог с тестом
 ::
 
-    cd firebat_console/examples/smoke
+    cd firebat-console/examples/smoke
 
 В первом терминале
     запускаем простой HTTP сервер, он будет возвращать листинг текущей директории в ответ на запрос
