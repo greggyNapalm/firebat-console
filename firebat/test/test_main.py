@@ -2,8 +2,7 @@ import sys
 sys.path.insert(0, '.')
 
 import unittest
-from firebat.console.conf import make_conf
-#import pkg_resources as _pkg_resources
+from firebat.console.conf import make_p_conf
 
 
 class TestMain(unittest.TestCase):
