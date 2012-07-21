@@ -32,7 +32,7 @@ def exit_err(msg):
     sys.exit(1)
 
 
-def make_conf(fire_cfg, **kwargs):
+def make_p_conf(fire_cfg, **kwargs):
     """ Generate ready to use phantom.conf
     Args:
         fire_cfg: dict with fire configuration
@@ -93,9 +93,10 @@ def make_conf(fire_cfg, **kwargs):
                 conf['target_ip_addr'] = socket.gethostbyname(addr)
                 conf['target_tcp_port'] = port
             except socket.gaierror, e:
-                __msg = 'Can\'t resolve domain name: %s; \'%s\' > \'%s\'' % \
-                        (addr, conf['name'], conf['addr'])
-                logger.error(__msg)
+                msg = 'Can\'t resolve domain name: %s; \'%s\' > \'%s\' = %s' %\
+                        (addr, conf['name'], 'addr', conf['addr'])
+                logger.error(msg)
+                return None
     elif conf['network_proto'] == 'ipv6':
         conf['modules'].append('io_benchmark_method_stream_ipv6')
         # TODO: validation for ipv6 addr

@@ -18,17 +18,22 @@ import commands
 import copy
 import base64
 from progressbar import Bar, ProgressBar, Percentage, ETA
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 import simplejson as json
 
-from firebat.console.conf import make_conf, get_defaults, get_main_cfg
+from firebat.console.conf import make_p_conf
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
 from firebat.console.cmd import get_logger
 from firebat.console.helpers import validate_dict, exit_err
+from exceptions import StepperSchemaFormat
 
 
 def build_path(orig_wd, config, fire, time):
+    '''Create str with path fo fire based on current time and fire name.
+    '''
     test_path = orig_wd + '/'
     test_path += config['title']['task'] + '_'
     test_path += getpass.getuser() + '_'
@@ -46,7 +51,6 @@ def start_daemon(fire):
         status_d: int, command exit code.
         text_d: str, command stdout.
     '''
-
     exec_name = 'daemon_fire'
     status, exec_path = commands.getstatusoutput('which %s' % exec_name)
     if status != 0:
@@ -70,7 +74,12 @@ def start_daemon(fire):
 
 
 def build_test(cfg, defaults, args, logger=None):
-    '''Doc here'''
+    '''Create dirs tree, phantom.cfg and ammo.stpd
+    Args:
+        fire: dict, test config.
+        default: dict, default settings and validation rules.
+        args: argparse obj instance.
+    '''
     if not logger.handlers:
         logger = get_logger()
 
@@ -94,7 +103,18 @@ def build_test(cfg, defaults, args, logger=None):
             else:
                 ammo_path = f['input_file']
 
-        pbar_max = f['total_dur'] = fire_duration(f)
+        if not os.path.isfile(ammo_path):
+            exit_err('No such file: %s' % ammo_path)
+
+        try:
+            pbar_max = f['total_dur'] = fire_duration(f)
+        except StepperSchemaFormat, e:
+            msg = [
+                'Malformed shcema format in fire: %s' % f['name'],
+                'in \'%s\' > \'%s\'' % (f['name'], e.value['schema'])
+            ]
+            exit_err(msg)
+
         widgets = [Percentage(), Bar(), ETA(), ]
         pbar = ProgressBar(widgets=widgets, maxval=pbar_max).start()
 
@@ -109,12 +129,17 @@ def build_test(cfg, defaults, args, logger=None):
             fire_fh.write(fire_json)
 
         with open('phantom.conf', 'w+') as cfg_fh:
-            cfg_fh.write(make_conf(f))
+            phantom_cfg = make_p_conf(f)
+            if phantom_cfg:
+                cfg_fh.write(phantom_cfg)
+            else:
+                exit_err('Can\'t create phantom.cfg from fire dict.')
 
         logger.info('Processing fire: %s' % f['name'])
         logger.info('Ammo file: %s' % ammo_path)
         logger.info('Load schema: %s' % f['load'])
         stpd_start = datetime.datetime.now()
+
         with open(ammo_path, 'r') as ammo_fh,\
             open('ammo.stpd', 'w+') as stpd_fh:
             gen_ammo = parse_ammo(ammo_fh)
