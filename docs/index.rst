@@ -13,9 +13,9 @@
 :Documentation: `PDF Documentation
  <http://media.readthedocs.org/pdf/firebat-console/latest/firebat-console.pdf>`_
 :License: `BSD License
- <http://www.voidspace.org.uk/python/license.shtml>`_
+ <http://opensource.org/licenses/BSD-3-Clause>`_
 :Support: `Google Group
- <https://groups.google.com/d/forum/phantom_doc>`_
+ <https://groups.google.com/forum/#!forum/loadit>`_
 :Issue tracker: `GitHub Issues
  <https://github.com/greggyNapalm/firebat-console/issues>`_
 
