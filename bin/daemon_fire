@@ -216,6 +216,7 @@ def run_phantom(status, sleep_time=1, logger=None):
     status.state = 'phantom working'
     drop_pid('phantom', str(os.getpid()), pid_dir='./')
     update_fire(status, json_path='.fire.json', logger=logger)
+    end_status = 0  # by default All is ok.
     while 1:
         status.duration_update()
         status.log_mtime_update()
@@ -226,7 +227,7 @@ def run_phantom(status, sleep_time=1, logger=None):
             status.stderr = job.stderr.read()
             status.state = 'phantom exited'
             logger.debug('phantom exited with retcode: %s' % retcode)
-            return 0
+            return end_status
             #break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
@@ -235,7 +236,8 @@ def run_phantom(status, sleep_time=1, logger=None):
                 logger.error('phantom answ file hasn\'t been updated to long')
                 logger.error('Try to stop the fire')
                 job.kill()
-                return 1
+                end_status = 1
+                
 
 
 def run_supervisor():

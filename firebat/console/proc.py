@@ -2,20 +2,16 @@
 # -*- coding: utf-8 -*-
 
 """
-firebat.console
+firebat.proc
 ~~~~~~~~~~~~~~~
 
-Helper script for Phantom load tool.
-    * generate config files and input data.
-    * runs test.
-    * aggregate result data.
+Contain functions for build tests:
+    * Compile Phantom input data
+    * Run tests
 """
 
 import os
-import sys
 import datetime
-import argparse
-import logging
 import getpass
 import cPickle
 import commands
@@ -23,34 +19,13 @@ import copy
 import base64
 from progressbar import Bar, ProgressBar, Percentage, ETA
 
-import yaml
 import simplejson as json
 
-from firebat import __version__
 from firebat.console.conf import make_conf, get_defaults, get_main_cfg
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
-from firebat.console.cmd import get_logger, list_running_jobs, kill_all
-
-
-def exit_err(msg):
-    logger = logging.getLogger('firebat.console')
-    if isinstance(msg, str):
-        msg = [msg, ]
-    for m in msg:
-        logger.error(m)
-    if not logger.handlers:
-        sys.stderr.write(msg)
-    sys.exit(1)
-
-
-def validate_dict(d, req):
-    ''' Check that all keys from required list present in tested dict.
-    '''
-    present_keys = d.keys()
-    diff = [val for val in req if val not in present_keys]
-    if len(diff) != 0:
-        raise ValueError('You missed required options in conf: %s' % diff)
+from firebat.console.cmd import get_logger
+from firebat.console.helpers import validate_dict, exit_err
 
 
 def build_path(orig_wd, config, fire, time):
@@ -175,81 +150,3 @@ def build_test(cfg, defaults, args, logger=None):
         stpd_job_dur = stpd_stop - stpd_start
         logger.info('ammo job takes: %s\n' % stpd_job_dur)
     logger.info('stpd generation finished.')
-
-
-def get_arg_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', nargs=1, action='store',
-                    dest='config_file', default='./fire.yaml',
-                    help='path to configuration file',)
-
-    parser.add_argument('-a', '--ammo', action='store',
-                    dest='ammo_file', default=None,
-                    help='path to ammo file',)
-
-    parser.add_argument('-o', '--only-prepare-stpd', action='store_const',
-                    dest='stpd_ammo_only', const=True,
-                    help='Only generate ammo stpd and exit',)
-
-    parser.add_argument('-k', '--kill-all', action='store_const',
-                    dest='kill_all', const=True,
-                    help='Kill all running fires and exit',)
-
-    parser.add_argument('--list', action="store_const", const=True,
-            help='List details of currently running fires.', dest='list_only')
-
-    parser.add_argument('--debug', action="store_const", const=True,
-            help='Whether to show debug msg in STDOUT', dest='debug')
-
-    parser.add_argument('--version', action='version',
-            version='%(prog)s ' + __version__)
-    return parser
-
-
-def main():
-    defaults = get_defaults()
-    args = get_arg_parser().parse_args()
-    logger = get_logger(is_debug=args.debug)
-    main_cfg = get_main_cfg(logger=logger)
-
-    if args.list_only:
-        list_running_jobs(logger=logger)
-        sys.exit(0)
-
-    if args.kill_all:
-        kill_all(logger=logger)
-        sys.exit(0)
-
-    if not main_cfg:
-        logger.warning('No valid main cfg, can\'t call remote API.')
-
-    # load job configuration.
-    try:
-        with open(args.config_file, 'r') as conf_fh:
-            config = yaml.load(conf_fh)
-    except IOError, e:
-        exit_err('Could not read "%s": %s\n' % (args.config_file, e))
-    except yaml.scanner.ScannerError, e:
-        exit_err('Could not parse config file: %s\n%s' % (args.config_file, e))
-
-    try:
-        validate_dict(config['title'], defaults['title_required_keys'])
-    except ValueError, e:
-        exit_err('Error in parsing fire conf:\n%s' % e)
-
-    # build ammos and Phantom configs.
-    build_test(config, defaults, args, logger=logger)
-
-    if args.stpd_ammo_only:  # generation only, We no need to run tests
-        sys.exit(0)
-
-    # let's start Phantom supervisor daemon for each fire.
-    for f in config['fire']:
-        retcode, out = start_daemon(f)
-        if retcode == 0:
-            logger.info('Fire %s launched successfully.' % f['name'])
-        else:
-            logger.error('Fire start fails: %s.Exit code: %s' % (out, retcode))
-
-if __name__ == '__main__':
-    main()
