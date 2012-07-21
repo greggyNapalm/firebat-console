@@ -4,7 +4,7 @@
 firebat.helpers
 ~~~~~~~~~~~~~~~
 
-A set of functions and tools to help in routineю
+A set of functions and tools to help in routine
 """
 
 import sys
@@ -29,7 +29,7 @@ def exit_err(msg):
     sys.exit(1)
 
 
-def get_wb_by_pid(pid):
+def get_wd_by_pid(pid):
     '''Return POSIX process working directory'''
     cmd = 'readlink -e /proc/%s/cwd' % pid
     status, stdout = commands.getstatusoutput(cmd)

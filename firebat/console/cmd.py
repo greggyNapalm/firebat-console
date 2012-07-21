@@ -21,15 +21,6 @@ from simplejson.decoder import JSONDecodeError
 import zmq
 
 
-def get_wb_by_pid(pid):
-    '''Return POSIX process working directory'''
-    cmd = 'readlink -e /proc/%s/cwd' % pid
-    status, stdout = commands.getstatusoutput(cmd)
-    if status == 0:
-        return stdout
-    return None
-
-
 def get_logger(is_debug=False):
     '''Return logger obj with console hendler.
     '''
