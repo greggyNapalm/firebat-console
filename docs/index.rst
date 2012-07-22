@@ -13,7 +13,7 @@
 :Documentation: `PDF Documentation
  <http://media.readthedocs.org/pdf/firebat-console-ru/latest/firebat-console-ru.pdf>`_
 :License: `BSD License
- <http://www.voidspace.org.uk/python/license.shtml>`_
+ <http://opensource.org/licenses/BSD-3-Clause>`_
 :Support: `Google Group
  <https://groups.google.com/forum/#!forum/loadit>`_
 :Issue tracker: `GitHub Issues
