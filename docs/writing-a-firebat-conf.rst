@@ -12,8 +12,6 @@ fire.yaml
 Пример
 ------
 
-`Актуальная версия <https://raw.github.com/greggyNapalm/firebat-console/master/fire.default.yaml>`_
-
 .. code-block:: yaml
 
     title:  # <Словарь>, Раздел содержащий общие сведенья о тесте
