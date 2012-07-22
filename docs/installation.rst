@@ -10,7 +10,7 @@
 
 2. Установить Firebat console.
 ------------------------------
-Firebat console распространяется как python package `pypi <http://pypi.python.org/pypi/firebat-console>`_, рекомендую использовать изолированное окружение `vurtualev/virtualenvwrapper <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ и воспользоваться утилитой pip:
+Firebat console распространяется как python package `pypi <http://pypi.python.org/pypi/firebat-console>`_, рекомендую использовать изолированное окружение `vurtualev/virtualenvwrapper <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ и утилитой pip:
 
 ::
 
