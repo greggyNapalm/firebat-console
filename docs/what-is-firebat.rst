@@ -17,4 +17,4 @@ Firebat является приложением с открытым исходн
 **Лицензия**
 ============
 
-Исходный код приложения распространияется под открытой лицензией `BSD <http://www.opensource.org/licenses/bsd-license.php>`_.
+Исходный код приложения распространяется под открытой лицензией `BSD <http://www.opensource.org/licenses/bsd-license.php>`_.
