@@ -19,7 +19,7 @@ install_requirements = [
     'jinja2',
     'progressbar',
     'simplejson',
-    'pyzmq',
+    #'pyzmq',
     #'numpy',
 ]
 

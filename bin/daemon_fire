@@ -19,13 +19,72 @@ import datetime
 import cPickle
 import base64
 from string import maketrans
+import threading
 from subprocess import Popen, PIPE
 
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
-import zmq
 
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
+
+
+def get_sock(sock_path, to=5, qlen=1):
+    '''Create TCP socket, call bind and listen.
+    Args:
+        sock_path: str, path to unix domain socket file.
+        to: int, accept call time out.
+        qlen: int, incoming TCP connections quiue length.
+
+    Returns:
+        sock: socket object.
+    '''
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.settimeout(to)
+    sock.bind(sock_path)
+    sock.listen(qlen)
+    return sock
+
+
+def translator(sock_path, logger=None):
+    '''Reply with fire state in JSON format on each request.
+    Args:
+        sock_path: str, path to unix domain socket file.
+        logger: logging object.
+    '''
+    logger = logging.getLogger('firebat.launcher')
+    if not logger.handlers:
+        logger = get_logger()
+
+    global msg
+    global run
+
+    try:
+        os.unlink(sock_path)
+    except OSError:
+        if os.path.exists(sock_path):
+            raise
+
+    while run:
+        try:
+            if not 'sock' in locals():
+                sock = get_sock(sock_path)
+            conn, client_addr = sock.accept()
+        except socket.timeout:
+            # no new connections from clients
+            continue
+        try:
+            while True:
+                data = conn.recv(1)
+                if data:
+                    msg_size = str(len(msg)).zfill(4)
+                    conn.sendall(msg_size)
+                    conn.sendall(msg)
+                else:
+                    break
+        finally:
+            # Clean up the connection
+            conn.close()
 
 
 class FireStatus(object):
@@ -73,15 +132,6 @@ class FireStatus(object):
         if astop_mtime:
             self.astop_mtime = astop_mtime
 
-        # use unix socket with zmq for IPC
-        self.sock_dir = '/tmp/fire/sock'
-        if not os.path.exists(self.sock_dir):
-            os.makedirs(self.sock_dir)
-
-        context = zmq.Context()
-        self.socket = context.socket(zmq.PUB)
-        self.socket.bind('ipc://%s/%s.sock' % (self.sock_dir, self.pid))
-
     def duration_update(self):
         delta = datetime.datetime.now() - self.started_at
         self.duration = delta.seconds
@@ -126,9 +176,10 @@ class FireStatus(object):
         file(file_path, 'w').write(str(self.jsonify()))
         return file_path
 
-    def mq_pub(self):
-        '''Pub current status to subscr trough unix domain socket'''
-        self.socket.send(self.jsonify())
+    def msg_update(self):
+        '''Doc str here'''
+        global msg
+        msg = self.jsonify()
 
 
 def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
@@ -231,13 +282,12 @@ def run_phantom(status, sleep_time=1, logger=None):
             #break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
-            status.mq_pub()
+            status.msg_update()
             if status.log_mtime_update() > status.astop_mtime:
                 logger.error('phantom answ file hasn\'t been updated to long')
                 logger.error('Try to stop the fire')
                 job.kill()
                 end_status = 1
-                
 
 
 def run_supervisor():
@@ -272,7 +322,20 @@ def run_supervisor():
         return
 
     signal.signal(signal.SIGUSR1, sig_usr1_handler)
+
+    # use unix domain socket in thread for IPC
+    sock_dir = '/tmp/fire/sock'
+    if not os.path.exists(sock_dir):
+        os.makedirs(sock_dir)
+    sock_path = '%s/%s.sock' % (sock_dir, status.pid)
+    global run
+
+    run = True
+    t1 = threading.Thread(target=translator, args=(sock_path,))
+    t1.start()
+
     end_status = run_phantom(status, logger=logger)
+    run = False
 
     logger.debug(str(status.jsonify()))
     os.unlink(pid_p)

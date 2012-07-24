@@ -10,15 +10,14 @@ Command line interface for Firebat.
 import os
 import signal
 import logging
-import commands
 import time
 import datetime
+import socket
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
-import zmq
 
 
 def get_logger(is_debug=False):
@@ -67,7 +66,7 @@ def get_running_fires(pids_path='/tmp/fire/', logger=None):
 
 
 def get_fire_info(pid, logger=None, sock_dir='/tmp/fire/sock'):
-    '''Read fire status by dump from file system.
+    '''Read fire status from unix socket.
     Args:
         pid: int, fire PID.
         sock_dir: str, where to search for fire sockets for IPC.
@@ -81,24 +80,27 @@ def get_fire_info(pid, logger=None, sock_dir='/tmp/fire/sock'):
         logger = get_logger()
     state = None
 
-    context = zmq.Context()
-    work_receiver = context.socket(zmq.PULL)
-    addr = 'ipc://%s/%s.sock' % (sock_dir, pid)
-    work_receiver.connect(addr)
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock_path = '%s/%s.sock' % (sock_dir, pid)
 
-    poller = zmq.Poller()
-    poller.register(work_receiver, zmq.POLLIN)
-    socks = dict(poller.poll(1500))  # in milliseconds
-    if socks:
-        if socks.get(work_receiver) == zmq.POLLIN:
-            try:
-                msg = work_receiver.recv(zmq.NOBLOCK)
-                state = json.loads(msg)
-            except JSONDecodeError, e:
-                logger.error('Can\'t parse fire status data geted' +
-                        ' from: %s\n%s' % (pid, e))
-    else:
-        logger.error('Time out waiting state msg from fire PID: %s' % pid)
+    try:
+        sock.connect(sock_path)
+    except socket.error:
+        logger.error('Can\'t connect to fire socket: %s' % sock_path)
+        return state
+
+    try:
+        sock.sendall('.')
+        msg_size = int(sock.recv(4))
+        msg_s = sock.recv(msg_size)
+    finally:
+        sock.close()
+
+    try:
+        state = json.loads(msg_s)
+    except JSONDecodeError, e:
+        logger.error('Can\'t parse fire status data geted' +
+                     ' from: %s\n%s' % (pid, e))
     return state
 
 
