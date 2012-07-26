@@ -9,27 +9,15 @@ Generate statis Web site with test results.
 """
 
 import os
-import sys
 import shutil
 import argparse
-import logging
 
 from jinja2 import FileSystemLoader
 from jinja2.environment import Environment
 
 from firebat import __version__, __path
 from firebat.console.aggr import process_phout
-
-
-def exit_err(msg):
-    logger = logging.getLogger('firebat.console')
-    if isinstance(msg, str):
-        msg = [msg, ]
-    for m in msg:
-        logger.error(m)
-    if not logger.handlers:
-        sys.stderr.write(msg)
-    sys.exit(1)
+from firebat.console.helpers import exit_err, get_logger
 
 
 def get_arg_parser():
@@ -54,21 +42,8 @@ def get_arg_parser():
     return parser
 
 
-def get_logger(args):
-    logger = logging.getLogger('firebat.console')
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    if args.debug:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s  %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
-
-
 def prepare_dir(args):
+    '''Copy or rewrite results directory with markup'''
     src_path = __path + '/result_markdown'
     try:
         if args.overwrite and os.path.exists(args.dst_dir):

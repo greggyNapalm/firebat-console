@@ -8,10 +8,8 @@ Aggregate test results.
 """
 
 import os
-import sys
 import string
 import datetime
-import logging
 from BaseHTTPServer import BaseHTTPRequestHandler as rh
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
@@ -21,9 +19,10 @@ from simplejson.decoder import JSONDecodeError
 try:
     import numpy.mean as mean
 except ImportError:
-    mean = lambda n: round(float( sum(n) / len(n)), 2)
+    mean = lambda n: round(float(sum(n) / len(n)), 2)
 
 from firebat.console.stepper import series_from_schema, schema_format_err
+from firebat.console.helpers import exit_err
 
 
 class phout_stat(object):
@@ -223,7 +222,8 @@ class phout_stat(object):
                 # rtt parts
                 for part in self.rtt_fracts:
                     mean_val = mean(r['rtt_fract'][part])
-                    self.rtt_fracts_series[part]['data'].append((tick, mean_val))
+                    self.rtt_fracts_series[part]['data'].append((tick,
+                                                                 mean_val))
 
     def get_errno_hcds(self):
         '''Make highcharts data series for errno chart.
@@ -297,17 +297,6 @@ class phout_stat(object):
                     'data': self.series[key],
             })
         return resp_perc
-
-
-def exit_err(msg):
-    logger = logging.getLogger('firebat.console')
-    if isinstance(msg, str):
-        msg = [msg, ]
-    for m in msg:
-        logger.error(m)
-    if not logger.handlers:
-        sys.stderr.write(msg)
-    sys.exit(1)
 
 
 def get_fire(json_path='.fire_up.json'):
