@@ -19,6 +19,7 @@ install_requirements = [
     'jinja2',
     'progressbar',
     'simplejson',
+    'validictory',
     #'pyzmq',
     #'numpy',
 ]
@@ -72,7 +73,6 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         "Topic :: Software Development :: Testing :: Traffic Generation",
     ],

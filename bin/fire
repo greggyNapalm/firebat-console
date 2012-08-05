@@ -14,14 +14,18 @@ Helper script for Phantom load tool.
 import sys
 import argparse
 import getpass
+import copy
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 import yaml
+import validictory
 
 from firebat import __version__
 from firebat.console.conf import get_defaults, get_main_cfg
 from firebat.console.cmd import get_logger, list_running_jobs, kill_all
 from firebat.console.proc import start_daemon, build_test
-from firebat.console.helpers import validate_dict, exit_err
+from firebat.console.helpers import validate, exit_err
 
 
 def build_path(orig_wd, config, fire, time):
@@ -77,7 +81,7 @@ def main():
         sys.exit(0)
 
     if not main_cfg:
-        logger.warning('No valid main cfg, can\'t call remote API.')
+        logger.debug('No valid main cfg, can\'t call remote API.')
 
     # load job configuration.
     try:
@@ -88,13 +92,18 @@ def main():
     except yaml.scanner.ScannerError, e:
         exit_err('Could not parse config file: %s\n%s' % (args.config_file, e))
 
+    for idx, fire in enumerate(config['fire']):
+        f = copy.copy(defaults['fire_conf'])
+        f.update(fire)
+        config['fire'][idx] = f
+
     try:
-        validate_dict(config['title'], defaults['title_required_keys'])
-    except ValueError, e:
+        validate(config)
+    except validictory.validator.ValidationError, e:
         exit_err('Error in parsing fire conf:\n%s' % e)
 
     # build ammos and Phantom configs.
-    build_test(config, defaults, args, logger=logger)
+    build_test(config, args, logger=logger)
 
     if args.stpd_ammo_only:  # generation only, We no need to run tests
         sys.exit(0)

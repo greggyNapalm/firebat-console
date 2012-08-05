@@ -13,6 +13,8 @@ import commands
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
+import validictory
+
 
 def exit_err(msg):
     '''On critical error, write out msg and exit.
@@ -54,12 +56,67 @@ def get_logger(is_debug=False):
     return logger
 
 
-def validate_dict(d, req, msg=None):
-    ''' Check that all keys from required list present in tested dict.
+def validate(sample, tgt='test'):
+    ''' Check test dict structure: required keys and their types.
+    Args:
+        sample: dict, data to validate.
+        tgt: str, part of fb input data(whole test or fire only).
+
+    Returns:
+        Raise exception on invalid sample.
     '''
-    present_keys = d.keys()
-    diff = [val for val in req if val not in present_keys]
-    if len(diff) != 0:
-        if not msg:
-            msg = 'You missed required options in conf:'
-        raise ValueError(msg + '  %s' % diff)
+    assert tgt in ['test', 'fire']
+    fire_schema = {
+        'type': 'object',
+        'properties': {
+            'name': {'type': 'string'},
+            'addr': {'type': 'string'},
+            'input_format': {'type': 'string'},
+            'input_file': {'type': 'string'},
+            'network_proto': {'type': 'string'},
+            'transport_proto': {'type': 'string'},
+            'instances': {'type': 'integer'},
+            'loop_ammo': {'type': 'boolean'},
+            'tag': {
+                'items': {
+                    'type': 'string',
+                },
+            },
+            'time_periods': {
+                'items': {
+                    'type': ['string', 'integer'],
+                },
+            },
+            'load': {
+                'items': {
+                    'type': 'array',
+                },
+            },
+        },
+    }
+
+    test_schema = {
+        'type': 'object',
+        'properties': {
+            'title': {
+                'type': 'object',
+                'properties': {
+                    'task': {'type': 'string'},
+                    'test_name': {'type': 'string'},
+                    'test_dsc': {'type': 'string', 'required': False},
+                }
+            },
+            'fire': {
+                'items': {
+                    'type': fire_schema,
+                },
+            },
+        },
+    }
+
+    if tgt == 'test':
+        validictory.validate(sample, test_schema)
+    elif tgt == 'fire':
+        validictory.validate(sample, fire_schema)
+
+    return True

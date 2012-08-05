@@ -22,12 +22,13 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import simplejson as json
+import validictory
 
 from firebat.console.conf import make_p_conf
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
 from firebat.console.cmd import get_logger
-from firebat.console.helpers import validate_dict, exit_err
+from firebat.console.helpers import validate, exit_err
 from exceptions import StepperSchemaFormat
 
 
@@ -73,7 +74,7 @@ def start_daemon(fire):
     return status_d, text_d
 
 
-def build_test(cfg, defaults, args, logger=None):
+def build_test(cfg, args, logger=None):
     '''Create dirs tree, phantom.cfg and ammo.stpd
     Args:
         fire: dict, test config.
@@ -87,13 +88,11 @@ def build_test(cfg, defaults, args, logger=None):
     orig_wd = os.getcwd()
     ammo_from_arg = False
 
-    for idx, f_orig in enumerate(cfg['fire']):
-        f = defaults['fire_conf']
-        f.update(f_orig)
+    for idx, f in enumerate(cfg['fire']):
         try:
-            validate_dict(f, defaults['fire_required_keys'])
-        except ValueError, e:
-            exit_err('Error in parsing fire conf:\n%s' % e)
+            validate(f, tgt='fire')
+        except validictory.validator.ValidationError, e:
+            exit_err('Error in parsing fire dict:\n%s' % e)
 
         # get absolute ammo path before chdir
         if not ammo_from_arg:
