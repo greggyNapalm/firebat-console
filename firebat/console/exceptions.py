@@ -25,6 +25,7 @@ class StepperSchemaFormat(Exception):
         #return repr(self.value)
         return self.value
 
+
 class FireEmergencyExit(Exception):
     def __init__(self, msg):
         self.msg = msg

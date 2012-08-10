@@ -122,7 +122,7 @@ def parse_schema(schema):
     elif schema[0] == 'line':
         rps_from, rps_to, duration = schema[-3:]
         if not (isinstance(rps_from, int) and\
-                isinstance(rps_to, int)): 
+                isinstance(rps_to, int)):
             schema_format_err(schema)
 
         # from simplejson 2.0.1 we have unicode instead bytestr

@@ -58,7 +58,8 @@ def get_arg_parser():
                     help='Kill all running fires and exit',)
 
     parser.add_argument('--verify_cfg', action="store_const", const=True,
-            help='Verify cfg file, dumps it in JSON and exit', dest='verify_cfg')
+                    help='Verify cfg file, dumps it in JSON and exit',
+                    dest='verify_cfg')
 
     parser.add_argument('--list', action="store_const", const=True,
             help='List details of currently running fires.', dest='list_only')
@@ -95,7 +96,8 @@ def main():
     except IOError, e:
         exit_err('Could not read "%s": %s\n' % (args.config_file, e))
     except yaml.scanner.ScannerError, e:
-        exit_err('Could not parse test config file: %s\n%s' % (args.config_file, e))
+        exit_err('Could not parse test config file: %s\n%s' %\
+                 (args.config_file, e))
 
     for idx, fire in enumerate(test_cfg['fire']):
         f = copy.copy(defaults['fire_conf'])
@@ -107,7 +109,7 @@ def main():
     except validictory.validator.ValidationError, e:
         exit_err('Error in parsing fire conf:\n%s' % e)
 
-    if args.verify_cfg: # cfg verification only, We no need to run tests
+    if args.verify_cfg:  # cfg verification only, We no need to run tests
         sys.stdout.write(json.dumps(test_cfg, sort_keys=True, indent=4 * ' '))
         sys.exit(0)
 

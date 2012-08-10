@@ -12,7 +12,6 @@ import sys
 import socket
 import logging
 import commands
-import shutil
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -135,6 +134,7 @@ def validate(sample, tgt='test'):
 
     return True
 
+
 def fetch_from_armorer(ammo_url,
                        api_url=None,
                        local_path='./armorer/ammo.gz'):
@@ -156,7 +156,7 @@ def fetch_from_armorer(ammo_url,
     if ammo_url.startswith('http://'):
         archive_url = ammo_url
     elif ammo_url.endswith('/last'):
-        ammo_resource =  '%s/%s' % (api_url, ammo_url)
+        ammo_resource = '%s/%s' % (api_url, ammo_url)
         ra = requests.get(ammo_resource, headers={'User-Agent': agent})
         ra.raise_for_status()
         archive_url = ra.json['url']

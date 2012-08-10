@@ -30,8 +30,7 @@ import validictory
 from firebat.console.conf import make_p_conf
 from firebat.console.stepper import parse_ammo, process_load_schema
 from firebat.console.stepper import fire_duration
-from firebat.console.cmd import get_logger
-from firebat.console.helpers import validate, exit_err, fetch_from_armorer
+from firebat.console.helpers import validate, fetch_from_armorer
 from exceptions import StepperSchemaFormat, FireEmergencyExit
 
 
@@ -71,13 +70,12 @@ def get_ammo(test_cfg, arm_api_url='http://armorer.load.yandex.net'):
     Returns:
         test_cfg: dict, updates test config.
     '''
-    #if not logger or not logger.handlers:
-    logger = logging.getLogger('root')
+    #logger = logging.getLogger('root')
 
     pref = ''
     if test_cfg['ammo']['type'] == 'armorer':
         pref = 'armorer/'
-        ammo_url = test_cfg['ammo']['source'] 
+        ammo_url = test_cfg['ammo']['source']
         local_ammo_path = fetch_from_armorer(ammo_url,
                                             api_url=arm_api_url)
 
@@ -109,6 +107,7 @@ def get_ammo(test_cfg, arm_api_url='http://armorer.load.yandex.net'):
             fh.close()
 
     return test_cfg
+
 
 def start_daemon(fire):
     ''' Build cmd string for system start-stop-daemon tool and call it.
@@ -149,10 +148,6 @@ def build_test(test_cfg, args=None):
         default: dict, default settings and validation rules.
         args: argparse obj instance.
     '''
-    
-    #if not logger.handlers:
-    #    logger = get_logger()
-
     logger = logging.getLogger('root')
 
     now = datetime.datetime.now()
@@ -217,7 +212,7 @@ def build_test(test_cfg, args=None):
             try:
                 gen_ammo = parse_ammo(ammo_fh, f,
                                       test_http_cntx=test_http_cntx)
-            except ValueError, e :
+            except ValueError, e:
                 raise FireEmergencyExit('Can\'t parse ammo file', e)
             offset = f.get('offset', 0)
             for schema in f['load']:
@@ -230,7 +225,7 @@ def build_test(test_cfg, args=None):
                             # need to restart requests chunks generator
                             ammo_fh.seek(0)
                             gen_ammo = parse_ammo(ammo_fh, f,
-                                                  test_http_cntx=test_http_cntx)
+                                                 test_http_cntx=test_http_cntx)
                             m_line, chunk = gen_ammo.next()
                         else:
                             stpd_fh.write('0')
