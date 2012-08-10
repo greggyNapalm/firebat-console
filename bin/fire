@@ -19,13 +19,15 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import yaml
+import simplejson as json
 import validictory
 
 from firebat import __version__
 from firebat.console.conf import get_defaults, get_main_cfg
-from firebat.console.cmd import get_logger, list_running_jobs, kill_all
-from firebat.console.proc import start_daemon, build_test
-from firebat.console.helpers import validate, exit_err
+from firebat.console.cmd import list_running_jobs, kill_all
+from firebat.console.proc import get_ammo, start_daemon, build_test
+from firebat.console.helpers import validate, exit_err, get_logger
+from firebat.console.exceptions import FireEmergencyExit
 
 
 def build_path(orig_wd, config, fire, time):
@@ -39,7 +41,7 @@ def build_path(orig_wd, config, fire, time):
 
 def get_arg_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', nargs=1, action='store',
+    parser.add_argument('-c', '--config', action='store',
                     dest='config_file', default='./fire.yaml',
                     help='path to configuration file',)
 
@@ -55,6 +57,9 @@ def get_arg_parser():
                     dest='kill_all', const=True,
                     help='Kill all running fires and exit',)
 
+    parser.add_argument('--verify_cfg', action="store_const", const=True,
+            help='Verify cfg file, dumps it in JSON and exit', dest='verify_cfg')
+
     parser.add_argument('--list', action="store_const", const=True,
             help='List details of currently running fires.', dest='list_only')
 
@@ -69,15 +74,15 @@ def get_arg_parser():
 def main():
     defaults = get_defaults()
     args = get_arg_parser().parse_args()
-    logger = get_logger(is_debug=args.debug)
-    main_cfg = get_main_cfg(logger=logger)
+    logger = get_logger(is_debug=args.debug, log_path='/tmp/555')
+    main_cfg = get_main_cfg()
 
     if args.list_only:
-        list_running_jobs(logger=logger)
+        list_running_jobs()
         sys.exit(0)
 
     if args.kill_all:
-        kill_all(logger=logger)
+        kill_all()
         sys.exit(0)
 
     if not main_cfg:
@@ -86,30 +91,40 @@ def main():
     # load job configuration.
     try:
         with open(args.config_file, 'r') as conf_fh:
-            config = yaml.load(conf_fh)
+            test_cfg = yaml.load(conf_fh)
     except IOError, e:
         exit_err('Could not read "%s": %s\n' % (args.config_file, e))
     except yaml.scanner.ScannerError, e:
-        exit_err('Could not parse config file: %s\n%s' % (args.config_file, e))
+        exit_err('Could not parse test config file: %s\n%s' % (args.config_file, e))
 
-    for idx, fire in enumerate(config['fire']):
+    for idx, fire in enumerate(test_cfg['fire']):
         f = copy.copy(defaults['fire_conf'])
         f.update(fire)
-        config['fire'][idx] = f
+        test_cfg['fire'][idx] = f
 
     try:
-        validate(config)
+        validate(test_cfg)
     except validictory.validator.ValidationError, e:
         exit_err('Error in parsing fire conf:\n%s' % e)
 
+    if args.verify_cfg: # cfg verification only, We no need to run tests
+        sys.stdout.write(json.dumps(test_cfg, sort_keys=True, indent=4 * ' '))
+        sys.exit(0)
+
+    if 'ammo' in test_cfg:
+        test_cfg = get_ammo(test_cfg)
+
     # build ammos and Phantom configs.
-    build_test(config, args, logger=logger)
+    try:
+        build_test(test_cfg, args=args)
+    except FireEmergencyExit, e:
+        exit_err(str(e))
 
     if args.stpd_ammo_only:  # generation only, We no need to run tests
         sys.exit(0)
 
     # start Phantom supervisor daemon for each fire.
-    for f in config['fire']:
+    for f in test_cfg['fire']:
         retcode, out = start_daemon(f)
         if retcode == 0:
             logger.info('Fire %s launched successfully.' % f['name'])

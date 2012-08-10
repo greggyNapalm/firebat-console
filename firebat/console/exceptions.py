@@ -24,3 +24,10 @@ class StepperSchemaFormat(Exception):
     def __str__(self):
         #return repr(self.value)
         return self.value
+
+class FireEmergencyExit(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg

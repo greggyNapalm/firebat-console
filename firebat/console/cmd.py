@@ -36,7 +36,7 @@ def get_logger(is_debug=False):
     return logger
 
 
-def get_running_fires(pids_path='/tmp/fire/', logger=None):
+def get_running_fires(pids_path='/tmp/fire/'):
     '''Read PID files from folder and fillter out currently running.
     Args:
         pids_path: str, wahere PID files stored.
@@ -45,9 +45,10 @@ def get_running_fires(pids_path='/tmp/fire/', logger=None):
     Returns:
         generator object, yield pids.
     '''
-    logger = logging.getLogger('firebat.console')
-    if not logger.handlers:
-        logger = get_logger()
+    logger = logging.getLogger('root')
+    #logger = logging.getLogger('firebat.console')
+    #if not logger.handlers:
+    #    logger = get_logger()
 
     if not os.path.exists(pids_path):
         logger.info('No active fires found.' +
@@ -65,7 +66,7 @@ def get_running_fires(pids_path='/tmp/fire/', logger=None):
                 yield pid
 
 
-def get_fire_info(pid, logger=None, sock_dir='/tmp/fire/sock'):
+def get_fire_info(pid, sock_dir='/tmp/fire/sock'):
     '''Read fire status from unix socket.
     Args:
         pid: int, fire PID.
@@ -75,9 +76,10 @@ def get_fire_info(pid, logger=None, sock_dir='/tmp/fire/sock'):
     Returns:
         state: dict, fire state.
     '''
-    logger = logging.getLogger('firebat.console')
-    if not logger.handlers:
-        logger = get_logger()
+    logger = logging.getLogger('root')
+    #logger = logging.getLogger('firebat.console')
+    #if not logger.handlers:
+    #    logger = get_logger()
     state = None
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -113,12 +115,13 @@ def list_running_jobs(pids_path='/tmp/fire/', logger=None):
     Returns:
         Just print to STDOUT.
     '''
-    logger = logging.getLogger('firebat.console')
+    logger = logging.getLogger('root')
+    #logger = logging.getLogger('firebat.console')
     if not logger.handlers:
         logger = get_logger()
 
     cnt = 0
-    for pid in get_running_fires(logger=logger):
+    for pid in get_running_fires():
         cnt += 1
         fire = get_fire_info(pid)
         if fire:
@@ -131,7 +134,7 @@ def list_running_jobs(pids_path='/tmp/fire/', logger=None):
         logger.info('No active fires found.')
 
 
-def kill_all(pids_path='/tmp/fire/', logger=None):
+def kill_all(pids_path='/tmp/fire/'):
     '''Kill all currently running fires..
     Args:
         pids_path: where to search PID files.
@@ -142,7 +145,8 @@ def kill_all(pids_path='/tmp/fire/', logger=None):
     '''
     SLP_TIME = 0.1
     WAIT_TO = 2
-    logger = logging.getLogger('firebat.console')
+    #logger = logging.getLogger('firebat.console')
+    logger = logging.getLogger('root')
     if not logger.handlers:
         logger = get_logger()
 

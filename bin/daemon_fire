@@ -128,9 +128,11 @@ class FireStatus(object):
         self.stdout = None
         self.stderr = None
 
-        astop_mtime = opts['autostop'].get('answ_mod_to', None)
-        if astop_mtime:
-            self.astop_mtime = astop_mtime
+        try:
+            #astop_mtime = opts['autostop']['answ_mod_to']
+            self.astop_mtime = opts['autostop']['answ_mod_to']
+        except KeyError:
+            pass
 
     def duration_update(self):
         delta = datetime.datetime.now() - self.started_at
@@ -283,7 +285,8 @@ def run_phantom(status, sleep_time=1, logger=None):
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
             status.msg_update()
-            if status.log_mtime_update() > status.astop_mtime:
+            if hasattr(status, 'astop_mtime') and \
+                    status.log_mtime_update() > status.astop_mtime:
                 logger.error('phantom answ file hasn\'t been updated to long')
                 logger.error('Try to stop the fire')
                 job.kill()

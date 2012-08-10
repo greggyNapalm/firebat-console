@@ -10,6 +10,9 @@ Generate stepped ammo(input data + load schema)
 import os
 import string
 
+#from ammo.lunapark.generator import make_get_req
+from ammo.phantom import HttpCompiler
+
 from exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 
@@ -144,42 +147,62 @@ def parse_schema(schema):
         schema_format_err(schema, msg=', Can\'t determine schema type')
 
 
-def parse_ammo(ammo_fh):
+def parse_ammo(ammo_fh, fire, test_http_cntx=None):
     '''Validate and reformat input requests data(ammo file)
     Args:
-        ammo_fh: File object, content in lunapark ammo format
+        ammo_fh: File object, content in lunapark suitable ammo format.
+        format: str, ammo file format.
 
     Returns:
         generator, which yield tuple with metaline and request text
     '''
-    def __file_format_err(ammo_fh, line):
-        except_data = {}
-        except_data['msg'] = 'Wrong metadata line format'
-        except_data['file_path'] = os.path.abspath(ammo_fh.name)
-        except_data['byte_offset'] = ammo_fh.tell()
-        except_data['err_line'] = line
-        raise StepperAmmoFormat(except_data)
+    if fire['input_format'] == 'plain':
+        def __file_format_err(ammo_fh, line):
+            except_data = {}
+            except_data['msg'] = 'Wrong metadata line format'
+            except_data['file_path'] = os.path.abspath(ammo_fh.name)
+            except_data['byte_offset'] = ammo_fh.tell()
+            except_data['err_line'] = line
+            raise StepperAmmoFormat(except_data)
 
-    while True:
-        raw_line = ammo_fh.readline()
-        line_spltd = raw_line.split()
-        if len(line_spltd) == 2:
-            # meta line with size and tag
-            line_form = line_spltd[0] + ' %s ' + line_spltd[1] + '\n'
-        elif len(line_spltd) == 1:
-            # meta line with size only
-            line_form = line_spltd[0] + ' %s' + '\n'
-        else:
-            __file_format_err(ammo_fh, raw_line.rstrip())
+        while True:
+            raw_line = ammo_fh.readline()
+            line_spltd = raw_line.split()
+            if len(line_spltd) == 2:
+                # meta line with size and tag
+                line_form = line_spltd[0] + ' %s ' + line_spltd[1] + '\n'
+            elif len(line_spltd) == 1:
+                # meta line with size only
+                line_form = line_spltd[0] + ' %s' + '\n'
+            else:
+                __file_format_err(ammo_fh, raw_line.rstrip())
 
-        if not line_spltd[0].isdigit():
-            __file_format_err(ammo_fh, raw_line.rstrip())
-        if line_spltd[0] == '0':
-            # We reached EOF
-            break
+            if not line_spltd[0].isdigit():
+                __file_format_err(ammo_fh, raw_line.rstrip())
+            if line_spltd[0] == '0':
+                # We reached EOF
+                break
 
-        chunk = ammo_fh.read(int(line_spltd[0]))
-        yield (line_form, chunk)
+            chunk = ammo_fh.read(int(line_spltd[0]))
+            yield (line_form, chunk)
+    elif fire['input_format'] == 'qs':
+        cntx = {}
+        if test_http_cntx:
+            cntx = test_http_cntx
+
+        if 'http_context' in fire:
+            cntx.update(fire['http_context'])
+
+        hc = HttpCompiler(cntx_up=cntx)
+        while True:
+            line = ammo_fh.readline().rstrip()
+            chunk = hc.build_req(line)
+            line_form = str(len(chunk)) + ' %s\n'
+            yield (line_form, chunk)
+
+    else:
+        msg = 'Unknown *input_format* > %s' % fire['input_format']
+        raise ValueError(msg)
 
 
 def const_shema(rpms, duration, tick_offset):
