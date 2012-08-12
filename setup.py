@@ -20,6 +20,7 @@ install_requirements = [
     'progressbar',
     'simplejson',
     'validictory',
+    'requests',
     #'pyzmq',
     #'numpy',
 ]
