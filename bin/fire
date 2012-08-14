@@ -26,8 +26,10 @@ from firebat import __version__
 from firebat.console.conf import get_defaults, get_main_cfg
 from firebat.console.cmd import list_running_jobs, kill_all
 from firebat.console.proc import get_ammo, start_daemon, build_test
-from firebat.console.helpers import validate, exit_err, get_logger
+from firebat.console.helpers import validate, exit_err, get_logger,\
+    test_cfg_complete
 from firebat.console.exceptions import FireEmergencyExit
+from firebat.clients import FirebatOverlordClient
 
 
 def build_path(orig_wd, config, fire, time):
@@ -48,6 +50,10 @@ def get_arg_parser():
     parser.add_argument('-a', '--ammo', action='store',
                     dest='ammo_file', default=None,
                     help='path to ammo file',)
+
+    parser.add_argument('-i', '--isolated', action='store_const',
+                    dest='isolated', const=True,
+                    help='Do not call remote Firebat API.',)
 
     parser.add_argument('-o', '--only-prepare-stpd', action='store_const',
                     dest='stpd_ammo_only', const=True,
@@ -114,7 +120,27 @@ def main():
         sys.exit(0)
 
     if 'ammo' in test_cfg:
-        test_cfg = get_ammo(test_cfg)
+        test_cfg = get_ammo(test_cfg, arm_api_url=main_cfg['ARMORER_API_URL'])
+
+    oc = None
+    if not args.isolated and main_cfg:
+        oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
+                                   main_cfg['FIERBAT_API_TO'])
+        test_cfg = test_cfg_complete(test_cfg)
+        retcode, resp = oc.registrate_new_test(test_cfg)
+        logger.info('Test registered successfully on remote side.')
+        if retcode:
+            test_id = resp.get('test_id', None)
+            if test_id:
+                test_cfg['id'] = int(test_id)
+            fires_ids = resp.get('fires_ids', None)
+            if fires_ids:
+                for idx, f_id in enumerate(fires_ids):
+                    test_cfg['fire'][idx]['id'] = int(f_id)
+
+        else:
+            del oc
+            exit_err('Firebat API call failed: %s' % resp)
 
     # build ammos and Phantom configs.
     try:
@@ -127,6 +153,13 @@ def main():
 
     # start Phantom supervisor daemon for each fire.
     for f in test_cfg['fire']:
+        if oc:
+            if not 'src_host' in f:
+                f['src_host'] = test_cfg['src_host']
+            retcode, err = oc.push_fire_updates(f['id'], fire_cfg=f,
+                                                status='started')
+            if not retcode:
+                logger.error('Can\'t update fire on API side: %s' % err)
         retcode, out = start_daemon(f)
         if retcode == 0:
             logger.info('Fire %s launched successfully.' % f['name'])

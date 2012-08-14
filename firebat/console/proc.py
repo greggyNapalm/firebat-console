@@ -59,16 +59,14 @@ def build_path(orig_wd, test_cfg, fire_cfg, time):
     return '%s/%s' % (test_wd, fire_wd)
 
 
-def get_ammo(test_cfg, arm_api_url='http://armorer.load.yandex.net'):
-
+def get_ammo(test_cfg, arm_api_url='http://armorer.load.io'):
     '''Ammo providers API wrapper.
     Args:
         test_cfg: dict, test config.
         armorer_api: str, REST API base url.
-        logger: logger object.
 
     Returns:
-        test_cfg: dict, updates test config.
+        test_cfg: dict, updated test config.
     '''
     #logger = logging.getLogger('root')
 
@@ -124,6 +122,7 @@ def start_daemon(fire):
         raise ValueError('Can\'t find executable: %s' % exec_name)
 
     opts = {
+        'id': fire.get('id', None),
         'owner': fire.get('owner', 'uid'),
         'total_dur': fire['total_dur'] / 1000,  # in seconds
     }
@@ -141,7 +140,6 @@ def start_daemon(fire):
 
 
 def build_test(test_cfg, args=None):
-#def build_test(test_cfg, args=None, logger=None):
     '''Create dirs tree, phantom.cfg and ammo.stpd
     Args:
         test_cfg: dict, test config.
@@ -153,6 +151,7 @@ def build_test(test_cfg, args=None):
     now = datetime.datetime.now()
     orig_wd = os.getcwd()
     ammo_from_arg = False
+    test_http_cntx = None
     if 'ammo' in test_cfg:
         test_http_cntx = test_cfg['ammo'].get('http_context', None)
 
@@ -200,7 +199,8 @@ def build_test(test_cfg, args=None):
             if phantom_cfg:
                 cfg_fh.write(phantom_cfg)
             else:
-                raise FireEmergencyExit('Can\'t create phantom.cfg from fire dict.')
+                raise FireEmergencyExit(
+                        'Can\'t create phantom.cfg from fire dict.')
 
         logger.info('Processing fire: %s' % f['name'])
         logger.info('Ammo file: %s' % ammo_path)
@@ -245,5 +245,5 @@ def build_test(test_cfg, args=None):
         pbar.finish()
         stpd_stop = datetime.datetime.now()
         stpd_job_dur = stpd_stop - stpd_start
-        logger.info('ammo job takes: %s\n' % stpd_job_dur)
+        logger.debug('ammo job takes: %s\n' % stpd_job_dur)
     logger.info('stpd generation finished.')

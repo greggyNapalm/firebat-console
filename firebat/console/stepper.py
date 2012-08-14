@@ -10,9 +10,7 @@ Generate stepped ammo(input data + load schema)
 import os
 import string
 
-#from ammo.lunapark.generator import make_get_req
-from ammo.phantom import HttpCompiler
-
+from ammo import HttpCompiler
 from exceptions import StepperAmmoFormat, StepperSchemaFormat
 
 

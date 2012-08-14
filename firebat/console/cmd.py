@@ -4,7 +4,7 @@
 firebat.cmd
 ~~~~~~~~~~~~~~~
 
-Command line interface for Firebat.
+Functions for command line usage.
 """
 
 import os
@@ -144,16 +144,16 @@ def kill_all(pids_path='/tmp/fire/'):
         Just logs result to STDOUT.
     '''
     SLP_TIME = 0.1
-    WAIT_TO = 2
+    WAIT_TO = 5
     #logger = logging.getLogger('firebat.console')
     logger = logging.getLogger('root')
     if not logger.handlers:
         logger = get_logger()
 
     cnt = 0
-    for pid in get_running_fires(logger=logger):
+    for pid in get_running_fires():
         cnt += 1
-        fire = get_fire_info(pid, logger=logger)
+        fire = get_fire_info(pid)
         logger.info('send SIGKILL to: %s' % fire['phantom_pid'])
         os.kill(fire['phantom_pid'], signal.SIGKILL)
         ready = False

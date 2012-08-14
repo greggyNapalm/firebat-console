@@ -12,6 +12,7 @@ import sys
 import socket
 import logging
 import commands
+import getpass
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -44,7 +45,7 @@ def get_wd_by_pid(pid):
 
 
 def get_logger(log_path=None, stream=True, is_debug=False):
-    '''Return logger obj with console hendler.
+    '''Return logger obj.
     '''
     logger = logging.getLogger('root')
     logger.setLevel(logging.DEBUG)
@@ -68,6 +69,54 @@ def get_logger(log_path=None, stream=True, is_debug=False):
         logger.addHandler(h)
     return logger
 
+fire_cfg_schema = {
+    'type': 'object',
+    'properties': {
+        'name': {'type': 'string'},
+        'addr': {'type': 'string'},
+        'input_format': {'type': 'string'},
+        'input_file': {'type': 'string'},
+        'network_proto': {'type': 'string'},
+        'transport_proto': {'type': 'string'},
+        'instances': {'type': 'integer'},
+        'loop_ammo': {'type': 'boolean'},
+        'tag': {
+            'items': {
+                'type': 'string',
+            },
+        },
+        'time_periods': {
+            'items': {
+                'type': ['string', 'integer'],
+            },
+        },
+        'load': {
+            'items': {
+                'type': 'array',
+            },
+        },
+    },
+}
+
+test_cfg_schema = {
+    'type': 'object',
+    'properties': {
+        'title': {
+            'type': 'object',
+            'properties': {
+                'task': {'type': 'string'},
+                'test_name': {'type': 'string'},
+                'test_dsc': {'type': 'string', 'required': False},
+            }
+        },
+        'fire': {
+            'items': {
+                'type': fire_cfg_schema,
+            },
+        },
+    },
+}
+
 
 def validate(sample, tgt='test'):
     ''' Check test dict structure: required keys and their types.
@@ -79,58 +128,11 @@ def validate(sample, tgt='test'):
         Raise exception on invalid sample.
     '''
     assert tgt in ['test', 'fire']
-    fire_schema = {
-        'type': 'object',
-        'properties': {
-            'name': {'type': 'string'},
-            'addr': {'type': 'string'},
-            'input_format': {'type': 'string'},
-            'input_file': {'type': 'string'},
-            'network_proto': {'type': 'string'},
-            'transport_proto': {'type': 'string'},
-            'instances': {'type': 'integer'},
-            'loop_ammo': {'type': 'boolean'},
-            'tag': {
-                'items': {
-                    'type': 'string',
-                },
-            },
-            'time_periods': {
-                'items': {
-                    'type': ['string', 'integer'],
-                },
-            },
-            'load': {
-                'items': {
-                    'type': 'array',
-                },
-            },
-        },
-    }
-
-    test_schema = {
-        'type': 'object',
-        'properties': {
-            'title': {
-                'type': 'object',
-                'properties': {
-                    'task': {'type': 'string'},
-                    'test_name': {'type': 'string'},
-                    'test_dsc': {'type': 'string', 'required': False},
-                }
-            },
-            'fire': {
-                'items': {
-                    'type': fire_schema,
-                },
-            },
-        },
-    }
 
     if tgt == 'test':
-        validictory.validate(sample, test_schema)
+        validictory.validate(sample, test_cfg_schema)
     elif tgt == 'fire':
-        validictory.validate(sample, fire_schema)
+        validictory.validate(sample, fire_cfg_schema)
 
     return True
 
@@ -177,3 +179,10 @@ def fetch_from_armorer(ammo_url,
             local_fh.write(line)
 
     return local_path
+
+
+def test_cfg_complete(test_cfg):
+    '''Add some fire_cfg attributes, to make it more useful'''
+    test_cfg['src_host'] = socket.getfqdn()
+    test_cfg['uid'] = getpass.getuser()
+    return test_cfg

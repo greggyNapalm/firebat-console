@@ -151,10 +151,8 @@ def locate_main_cfg():
     return None
 
 
-def get_main_cfg(logger=None):
-    logger = logging.getLogger('firebat.console')
-    if not logger.handlers:
-        logger = get_logger()
+def get_main_cfg():
+    logger = logging.getLogger('root')
 
     cfg_path = locate_main_cfg()
     if cfg_path:

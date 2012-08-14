@@ -25,6 +25,10 @@ from subprocess import Popen, PIPE
 import simplejson as json
 from simplejson.decoder import JSONDecodeError
 
+from firebat.console.conf import get_main_cfg
+from firebat.console.helpers import get_logger
+from firebat.clients import FirebatOverlordClient
+
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
 
 
@@ -46,16 +50,12 @@ def get_sock(sock_path, to=5, qlen=1):
     return sock
 
 
-def translator(sock_path, logger=None):
+def translator(sock_path):
     '''Reply with fire state in JSON format on each request.
     Args:
         sock_path: str, path to unix domain socket file.
-        logger: logging object.
     '''
-    logger = logging.getLogger('firebat.launcher')
-    if not logger.handlers:
-        logger = get_logger()
-
+    logger = logging.getLogger('root')
     global msg
     global run
 
@@ -88,7 +88,7 @@ def translator(sock_path, logger=None):
 
 
 class FireStatus(object):
-    """Supervisor and Phantom status information singleton.
+    """Supervisor and Phantom status information container.
 
     Attributes:
         state: str, human readable status.
@@ -107,12 +107,8 @@ class FireStatus(object):
         stderr: str, Phantom process STDERR.
         eggs: An integer count of the eggs we have laid.
     """
-    def __init__(self, opts, state='Starting', logger=None):
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = get_logger()
-
+    def __init__(self, opts, state='Starting'):
+        self.logger = logging.getLogger('root')
         self.pid = os.getpid()
         self.state = state
         self.started_at = datetime.datetime.now()
@@ -179,7 +175,7 @@ class FireStatus(object):
         return file_path
 
     def msg_update(self):
-        '''Doc str here'''
+        '''Update data tranlator operates with'''
         global msg
         msg = self.jsonify()
 
@@ -199,37 +195,16 @@ def drop_pid(name, pid, pid_dir='/var/run/', stamp=False):
     return pid_file
 
 
-def get_logger(log_path='./fire.log', log_lvl=logging.DEBUG):
-    '''Create logger object.
-    Args:
-        log_path: str, path to new log file.
-        log_lvl: int
-
-    Returns:
-        logger obj
-    '''
-
-    logger = logging.getLogger('firebat.launcher')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(log_path)
-    fh.setLevel(log_lvl)
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    return logger
-
-
-def update_fire(status, json_path='.fire.json', logger=None):
+def update_fire(status, json_path='.fire.json'):
     '''Update fire dict according to status object.
     Args:
         status: obj, current status object.
         json_path: str, file path fire dict shud be readed from.
-        logger: logger object.
 
     Returns:
         put new JSON file to fire working directory.
     '''
-
+    logger = logging.getLogger('root')
     new_path = '.fire_up.json'
     try:
         with open(json_path, "r") as fire_fh:
@@ -252,23 +227,20 @@ def update_fire(status, json_path='.fire.json', logger=None):
         logger.error('Could not write "%s": %s\n' % (new_path, e))
 
 
-def run_phantom(status, sleep_time=1, logger=None):
-    '''Create new POSIX process and wait until exit.
+def run_phantom(status, sleep_time=1):
+    '''Create new POSIX process and wait until it terminates.
     Args:
         status: obj, FireStatus instance to collect monitorring data.
         sleep_time: int, time interval between iterations.
-        logger: obj, logger instance.
     '''
-
-    if not logger:
-        logger = get_logger()
+    logger = logging.getLogger('root')
     logger.debug('Phantom launch')
     job = Popen(PHANTOM_CMD, stdout=PIPE, stderr=PIPE)
     status.state = 'phantom launched'
     status.phantom_pid = job.pid
     status.state = 'phantom working'
     drop_pid('phantom', str(os.getpid()), pid_dir='./')
-    update_fire(status, json_path='.fire.json', logger=logger)
+    update_fire(status, json_path='.fire.json')
     end_status = 0  # by default All is ok.
     while 1:
         status.duration_update()
@@ -281,7 +253,6 @@ def run_phantom(status, sleep_time=1, logger=None):
             status.state = 'phantom exited'
             logger.debug('phantom exited with retcode: %s' % retcode)
             return end_status
-            #break
         else:  # No process is done, wait a bit and check again.
             time.sleep(sleep_time)
             status.msg_update()
@@ -294,7 +265,7 @@ def run_phantom(status, sleep_time=1, logger=None):
 
 
 def run_supervisor():
-    '''Shud be called in new daemon process to run and check phantom tool
+    '''Shud be called in new daemon process to run and check phantom job.
     Args:
         log_path: str, path to new log file.
         log_lvl: int
@@ -305,13 +276,13 @@ def run_supervisor():
                      pid_dir='/tmp/fire/',
                      stamp=True)
     drop_pid('fire', str(os.getpid()), pid_dir='./')
-    logger = get_logger()
+    logger = get_logger(log_path='./fire.log', stream=False, is_debug=True)
 
     opts = None
     if (len(sys.argv) > 1):
         opts = cPickle.loads(base64.b64decode(sys.argv[1]))
 
-    status = FireStatus(opts, logger=logger)
+    status = FireStatus(opts)
     logger.info('PID file: %s' % pid_p)
     logger.info('PID: %s' % os.getpid())
 
@@ -337,8 +308,22 @@ def run_supervisor():
     t1 = threading.Thread(target=translator, args=(sock_path,))
     t1.start()
 
-    end_status = run_phantom(status, logger=logger)
+    end_status = run_phantom(status)
     run = False
+
+    # before exit part
+    fire_id = opts.get('id', None)
+    if fire_id:
+        main_cfg = get_main_cfg()
+        oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
+                                   main_cfg['FIERBAT_API_TO'])
+
+        retcode, err = oc.push_fire_updates(fire_id, status='finished',
+                            ended_at=datetime.datetime.utcnow().isoformat())
+        if retcode:
+            logger.info('Fire-overlord API call > fire updated successfully.')
+        else:
+            logger.error('Fire-overlord API call failed: %s' % err)
 
     logger.debug(str(status.jsonify()))
     os.unlink(pid_p)
