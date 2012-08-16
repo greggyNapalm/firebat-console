@@ -7,7 +7,9 @@ firebat.clients
 
 Remote API clients.
 """
+import os
 import socket
+import logging
 
 import requests
 import simplejson as json
@@ -78,3 +80,48 @@ class FirebatOverlordClient(object):
             return True, None
         else:
             return False, 'resp status code: %s' % r.status_code
+
+
+def fetch_from_armorer(ammo_url,
+                       api_url=None,
+                       local_path='./armorer/ammo.gz'):
+    ''' Check test dict structure: required keys and their types.
+    Args:
+        ammo_url: str, direct file URL or armorer API path.
+        api_url: str, base armorer REST API url.
+        local_path: str, path to store downloaded data.
+
+    Returns:
+        local_path: str.
+    '''
+    assert isinstance(ammo_url, basestring)
+
+    logger = logging.getLogger('root')
+
+    agent = 'firebat %s' % socket.gethostname()
+
+    if ammo_url.startswith('http://'):
+        archive_url = ammo_url
+    elif ammo_url.endswith('/last'):
+        ammo_resource = '%s/%s' % (api_url, ammo_url)
+        ra = requests.get(ammo_resource, headers={'User-Agent': agent})
+        ra.raise_for_status()
+        archive_url = ra.json['url']
+
+    logger.info('Fetching ammo from: %s' % archive_url)
+    r = requests.get(archive_url, headers={'User-Agent': agent})
+    r.raise_for_status()
+
+    size = int(r.headers['Content-Length'].strip())
+    logger.info('Ammo size is: %s bytes(%s MB)' % (size, size / (1024 * 1024)))
+
+    dirs_in_local_path = '/'.join(local_path.split('/')[:-1])
+    if not os.path.exists(dirs_in_local_path):
+        os.makedirs(dirs_in_local_path)
+
+    with open(local_path, 'wb') as local_fh:
+        for line in r.content:
+            local_fh.write(line)
+
+    return local_path
+

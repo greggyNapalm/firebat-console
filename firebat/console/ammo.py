@@ -30,4 +30,8 @@ class HttpCompiler(object):
         self.tmpl = bio.getvalue().decode('utf-8')
 
     def build_req(self, qs):
-        return self.tmpl % qs
+        try:
+            result = self.tmpl % qs
+        except UnicodeDecodeError:
+            return None
+        return result

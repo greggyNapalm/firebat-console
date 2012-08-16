@@ -12,7 +12,6 @@ Contain functions for build tests:
 
 import os
 import datetime
-import getpass
 import cPickle
 import commands
 import itertools
@@ -28,28 +27,17 @@ import simplejson as json
 import validictory
 
 from firebat.console.conf import make_p_conf
-from firebat.console.stepper import parse_ammo, process_load_schema
-from firebat.console.stepper import fire_duration
-from firebat.console.helpers import validate, fetch_from_armorer
+from firebat.console.stepper import parse_ammo, process_load_schema,\
+    fire_duration
+from firebat.console.helpers import validate, get_test_uniq_name
+from firebat.clients import fetch_from_armorer
 from exceptions import StepperSchemaFormat, FireEmergencyExit
 
 
 def build_path(orig_wd, test_cfg, fire_cfg, time):
     '''Create str with path fo fire based on test config.
     '''
-    test_id = test_cfg.get('id', None)
-    if test_id:
-        test_wd = '%s/%s' % (orig_wd, test_id)
-    else:
-        test_wd = orig_wd + '/'
-        test_wd += test_cfg['title']['task'] + '_'
-        test_wd += getpass.getuser() + '_'
-        test_wd += time.strftime('%Y%m%d-%H%M%S')
-
-    #if os.path.exists(test_wd):
-    #    raise FireEmergencyExit('Test working directory allready exist: %s' %\
-    #                            test_wd)
-
+    test_wd = '%s/%s' % (orig_wd, get_test_uniq_name(test_cfg))
     fire_id = fire_cfg.get('id', None)
     if fire_id:
         fire_wd = '%s-%s' % (fire_id, fire_cfg['name'])
@@ -103,6 +91,19 @@ def get_ammo(test_cfg, arm_api_url='http://armorer.load.io'):
             test_cfg['fire'][idx]['input_file'] = os.path.abspath(fh.name)
             test_cfg['fire'][idx]['input_format'] = 'qs'
             fh.close()
+
+    elif test_cfg['ammo']['method'] in ['single', 's']:
+        result_ammo_path = '%s%s.qs' % (pref, 'single')
+        with gzip.open(local_ammo_path, 'r') as gz_fh, open(result_ammo_path,
+                'w+') as result_fh:
+            for line in gz_fh:
+                result_fh.write(line)
+
+        for idx, f in enumerate(test_cfg['fire']):
+            test_cfg['fire'][idx]['input_file'] = os.path.abspath(result_fh.name)
+    else:
+        raise FireEmergencyExit('Unknown param in test > ammo > method: %s' %
+                                test_cfg['ammo']['method'])
 
     return test_cfg
 

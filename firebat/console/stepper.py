@@ -193,8 +193,10 @@ def parse_ammo(ammo_fh, fire, test_http_cntx=None):
 
         hc = HttpCompiler(cntx_up=cntx)
         while True:
-            line = ammo_fh.readline().rstrip()
-            chunk = hc.build_req(line)
+            chunk = None
+            while not chunk:  # input data can be malformed
+                line = ammo_fh.readline().rstrip()
+                chunk = hc.build_req(line)
             line_form = str(len(chunk)) + ' %s\n'
             yield (line_form, chunk)
 

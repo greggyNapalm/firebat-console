@@ -9,10 +9,12 @@ A set of functions and tools to help in routine
 
 import os
 import sys
+import time
 import socket
 import logging
 import commands
 import getpass
+from pwd import getpwuid
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -137,52 +139,64 @@ def validate(sample, tgt='test'):
     return True
 
 
-def fetch_from_armorer(ammo_url,
-                       api_url=None,
-                       local_path='./armorer/ammo.gz'):
-    ''' Check test dict structure: required keys and their types.
-    Args:
-        ammo_url: str, direct file URL or armorer API path.
-        api_url: str, base armorer REST API url.
-        local_path: str, path to store downloaded data.
-
-    Returns:
-        local_path: str.
-    '''
-    assert isinstance(ammo_url, basestring)
-
-    logger = logging.getLogger('root')
-
-    agent = 'firebat %s' % socket.gethostname()
-
-    if ammo_url.startswith('http://'):
-        archive_url = ammo_url
-    elif ammo_url.endswith('/last'):
-        ammo_resource = '%s/%s' % (api_url, ammo_url)
-        ra = requests.get(ammo_resource, headers={'User-Agent': agent})
-        ra.raise_for_status()
-        archive_url = ra.json['url']
-
-    logger.info('Fetching ammo from: %s' % archive_url)
-    r = requests.get(archive_url, headers={'User-Agent': agent})
-    r.raise_for_status()
-
-    size = int(r.headers['Content-Length'].strip())
-    logger.info('Ammo size is: %s bytes(%s MB)' % (size, size / (1024 * 1024)))
-
-    dirs_in_local_path = '/'.join(local_path.split('/')[:-1])
-    if not os.path.exists(dirs_in_local_path):
-        os.makedirs(dirs_in_local_path)
-
-    with open(local_path, 'wb') as local_fh:
-        for line in r.content:
-            local_fh.write(line)
-
-    return local_path
-
-
 def test_cfg_complete(test_cfg):
-    '''Add some fire_cfg attributes, to make it more useful'''
+    '''Add some fire_cfg attributes, on first API call'''
     test_cfg['src_host'] = socket.getfqdn()
     test_cfg['uid'] = getpass.getuser()
     return test_cfg
+
+def get_test_uniq_name(test_cfg):
+    '''If We got ID from API side - returns ID, else
+       generate uniq string with TASK, UID adn TIME.'''
+    test_id = test_cfg.get('id', None)
+    if test_id:
+        name =  test_id
+    else:
+        name = test_cfg['title']['task'] + '_'
+        name += getpass.getuser() + '_'
+        name += time.strftime('%Y%m%d-%H%M%S')
+    return name
+
+def owner_by_path(path):
+    return getpwuid(os.stat(path).st_uid).pw_name
+
+def check_test_lock(locks_path):
+    is_busy = False
+    locks = []
+    for f in os.listdir(locks_path):
+        if (f.startswith('lunapark_') or f.startswith('firebat_')) and\
+           f.endswith('.lock'):
+            f_path = '%s/%s' % (locks_path, f)
+            print f_path
+            is_busy = True
+            locks.append({
+                'file_name': f,
+                'created_at': os.path.getmtime(f_path),
+                'owner': owner_by_path(f_path),
+            })
+    return {'is_busy': is_busy, 'locks': locks}
+
+def acquire_test_lock(locks_path, name):
+    lock_state = check_test_lock(locks_path)
+    if lock_state['is_busy']:
+        return None, 'Lock present: %s' % lock_state['locks']
+
+    lock_path = '%s/firebat_%s.lock' % (locks_path, name)
+    try:
+        open(lock_path, 'w').close()
+    except Exception, e:
+        return None, e
+    return lock_path, None 
+
+def release_test_lock(locks_path, name):
+    lock_path = '%s/firebat_%s.lock' % (locks_path, name)
+    if not os.path.isfile(lock_path):
+        return None, 'No such file: %s' % lock_path
+
+    try:
+        os.unlink(locks_path)
+        #os.remove(locks_path)
+    except Exception, e:
+        return None, e
+
+    return True, None

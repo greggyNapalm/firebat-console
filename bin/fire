@@ -27,7 +27,7 @@ from firebat.console.conf import get_defaults, get_main_cfg
 from firebat.console.cmd import list_running_jobs, kill_all
 from firebat.console.proc import get_ammo, start_daemon, build_test
 from firebat.console.helpers import validate, exit_err, get_logger,\
-    test_cfg_complete
+    test_cfg_complete, get_test_uniq_name
 from firebat.console.exceptions import FireEmergencyExit
 from firebat.clients import FirebatOverlordClient
 
@@ -119,17 +119,15 @@ def main():
         sys.stdout.write(json.dumps(test_cfg, sort_keys=True, indent=4 * ' '))
         sys.exit(0)
 
-    if 'ammo' in test_cfg:
-        test_cfg = get_ammo(test_cfg, arm_api_url=main_cfg['ARMORER_API_URL'])
-
     oc = None
-    if not args.isolated and main_cfg:
+    # call firebat API if We shud.
+    if not args.isolated and not args.stpd_ammo_only and main_cfg:
         oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
                                    main_cfg['FIERBAT_API_TO'])
         test_cfg = test_cfg_complete(test_cfg)
         retcode, resp = oc.registrate_new_test(test_cfg)
-        logger.info('Test registered successfully on remote side.')
         if retcode:
+            logger.info('Test registered successfully on remote side.')
             test_id = resp.get('test_id', None)
             if test_id:
                 test_cfg['id'] = int(test_id)
@@ -138,9 +136,16 @@ def main():
                 for idx, f_id in enumerate(fires_ids):
                     test_cfg['fire'][idx]['id'] = int(f_id)
 
+            # put lock file
+            #lock_path = '%s/%s' % (main_cfg['LOCKS_PATH'],
+            #                       get_test_uniq_name(test_cfg))
+
         else:
             del oc
             exit_err('Firebat API call failed: %s' % resp)
+
+    if 'ammo' in test_cfg:
+        test_cfg = get_ammo(test_cfg, arm_api_url=main_cfg['ARMORER_API_URL'])
 
     # build ammos and Phantom configs.
     try:
