@@ -27,7 +27,7 @@ from firebat.console.conf import get_defaults, get_main_cfg
 from firebat.console.cmd import list_running_jobs, kill_all
 from firebat.console.proc import get_ammo, start_daemon, build_test
 from firebat.console.helpers import validate, exit_err, get_logger,\
-    test_cfg_complete, get_test_uniq_name
+    test_cfg_complete, get_test_uniq_name, acquire_test_lock, check_test_lock
 from firebat.console.exceptions import FireEmergencyExit
 from firebat.clients import FirebatOverlordClient
 
@@ -120,29 +120,35 @@ def main():
         sys.exit(0)
 
     oc = None
-    # call firebat API if We shud.
-    if not args.isolated and not args.stpd_ammo_only and main_cfg:
-        oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
-                                   main_cfg['FIERBAT_API_TO'])
-        test_cfg = test_cfg_complete(test_cfg)
-        retcode, resp = oc.registrate_new_test(test_cfg)
-        if retcode:
-            logger.info('Test registered successfully on remote side.')
-            test_id = resp.get('test_id', None)
-            if test_id:
-                test_cfg['id'] = int(test_id)
-            fires_ids = resp.get('fires_ids', None)
-            if fires_ids:
-                for idx, f_id in enumerate(fires_ids):
-                    test_cfg['fire'][idx]['id'] = int(f_id)
+    if not check_test_lock(main_cfg['LOCKS_PATH'])['is_busy']:
+        logger.info('Lock is free')
+        # call firebat API if We shud.
+        if not args.isolated and not args.stpd_ammo_only and main_cfg:
+            oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
+                                       main_cfg['FIERBAT_API_TO'])
+            test_cfg = test_cfg_complete(test_cfg)
+            retcode, resp = oc.registrate_new_test(test_cfg)
+            if retcode:
+                logger.info('Test registered successfully on remote side.')
+                test_id = resp.get('test_id', None)
+                if test_id:
+                    test_cfg['id'] = int(test_id)
+                fires_ids = resp.get('fires_ids', None)
+                if fires_ids:
+                    for idx, f_id in enumerate(fires_ids):
+                        test_cfg['fire'][idx]['id'] = int(f_id)
+            else:
+                del oc
+                exit_err('Firebat API call failed: %s' % resp)
 
-            # put lock file
-            #lock_path = '%s/%s' % (main_cfg['LOCKS_PATH'],
-            #                       get_test_uniq_name(test_cfg))
+    else:
+        logger.error('Lock allready acquired, tank is busy.')
 
-        else:
-            del oc
-            exit_err('Firebat API call failed: %s' % resp)
+    retcode, err = acquire_test_lock(main_cfg['LOCKS_PATH'], get_test_uniq_name(test_cfg))
+    if retcode:
+        logger.info('Lock acquired: %s' % retcode)
+    else:
+        logger.error('Lock acquire failed: %s' % err)
 
     if 'ammo' in test_cfg:
         test_cfg = get_ammo(test_cfg, arm_api_url=main_cfg['ARMORER_API_URL'])

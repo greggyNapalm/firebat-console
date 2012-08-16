@@ -183,19 +183,19 @@ def acquire_test_lock(locks_path, name):
 
     lock_path = '%s/firebat_%s.lock' % (locks_path, name)
     try:
-        open(lock_path, 'w').close()
+        #open(lock_path, 'w').close()
+        open(lock_path, 'w')
     except Exception, e:
         return None, e
     return lock_path, None 
 
 def release_test_lock(locks_path, name):
-    lock_path = '%s/firebat_%s.lock' % (locks_path, name)
-    if not os.path.isfile(lock_path):
-        return None, 'No such file: %s' % lock_path
+    l_path = '%s/firebat_%s.lock' % (locks_path, name)
+    if not os.path.isfile(l_path):
+        return None, 'No such file: %s' % l_path
 
     try:
-        os.unlink(locks_path)
-        #os.remove(locks_path)
+        os.unlink(l_path)
     except Exception, e:
         return None, e
 
