@@ -9,12 +9,16 @@ A set of functions and tools to help in routine
 
 import os
 import sys
+import signal
+import errno
+import fcntl
 import time
 import socket
 import logging
 import commands
 import getpass
 from pwd import getpwuid
+from contextlib import contextmanager
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -31,7 +35,8 @@ def exit_err(msg):
     if isinstance(msg, basestring):
         msg = [msg, ]
     for m in msg:
-        logger.error(m)
+        if m:
+            logger.error(m)
     if not logger.handlers:
         sys.stderr.write(msg)
     sys.exit(1)
@@ -46,10 +51,10 @@ def get_wd_by_pid(pid):
     return None
 
 
-def get_logger(log_path=None, stream=True, is_debug=False):
+def get_logger(log_path=None, stream=True, is_debug=False, name='root'):
     '''Return logger obj.
     '''
-    logger = logging.getLogger('root')
+    logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s  %(message)s')
 
@@ -160,13 +165,13 @@ def get_test_uniq_name(test_cfg):
 def owner_by_path(path):
     return getpwuid(os.stat(path).st_uid).pw_name
 
-def check_test_lock(locks_path):
+def check_luna_lock(locks_path):
     is_busy = False
     locks = []
     for f in os.listdir(locks_path):
-        if (f.startswith('lunapark_') or f.startswith('firebat_')) and\
-           f.endswith('.lock'):
+        if f.startswith('lunapark_') and f.endswith('.lock'):
             f_path = '%s/%s' % (locks_path, f)
+            #d
             print f_path
             is_busy = True
             locks.append({
@@ -176,27 +181,38 @@ def check_test_lock(locks_path):
             })
     return {'is_busy': is_busy, 'locks': locks}
 
-def acquire_test_lock(locks_path, name):
-    lock_state = check_test_lock(locks_path)
-    if lock_state['is_busy']:
-        return None, 'Lock present: %s' % lock_state['locks']
 
-    lock_path = '%s/firebat_%s.lock' % (locks_path, name)
-    try:
-        #open(lock_path, 'w').close()
-        open(lock_path, 'w')
-    except Exception, e:
-        return None, e
-    return lock_path, None 
+@contextmanager
+def timeout(seconds):
+    '''Helps to stop blocking sys calls by signals.'''
+    def timeout_handler(signum, frame):
+        pass
 
-def release_test_lock(locks_path, name):
-    l_path = '%s/firebat_%s.lock' % (locks_path, name)
-    if not os.path.isfile(l_path):
-        return None, 'No such file: %s' % l_path
+    original_handler = signal.signal(signal.SIGALRM, timeout_handler)
 
     try:
-        os.unlink(l_path)
-    except Exception, e:
-        return None, e
+        signal.alarm(seconds)
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original_handler)
 
+
+def get_lock(fileno, lck_to=2, exclusive=False, luna_lcks_path='/var/lock'):
+    '''Try to acquire loack with flock sys call.'''
+    # workaround fro lunapark locking mechanism
+    luna_lck = check_luna_lock(luna_lcks_path)
+    if luna_lck['is_busy']:
+        return False, luna_lck['locks']
+
+    with timeout(lck_to):
+        try:
+            if exclusive:
+                fcntl.flock(fileno, fcntl.LOCK_EX)
+            else:
+                fcntl.flock(fileno, fcntl.LOCK_SH)
+        except IOError, e:
+            if e.errno != errno.EINTR:
+                raise e
+            return False, None
     return True, None

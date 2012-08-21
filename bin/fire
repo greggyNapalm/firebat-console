@@ -10,35 +10,40 @@ Helper script for Phantom load tool.
     * runs test.
     * aggregate result data.
 """
-
+import os
 import sys
 import argparse
 import getpass
 import copy
+import daemon
+import time
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 import yaml
 import simplejson as json
 import validictory
+import lockfile
 
 from firebat import __version__
 from firebat.console.conf import get_defaults, get_main_cfg
 from firebat.console.cmd import list_running_jobs, kill_all
 from firebat.console.proc import get_ammo, start_daemon, build_test
 from firebat.console.helpers import validate, exit_err, get_logger,\
-    test_cfg_complete, get_test_uniq_name, acquire_test_lock, check_test_lock
+    test_cfg_complete, get_test_uniq_name, get_lock
 from firebat.console.exceptions import FireEmergencyExit
+from firebat.console.supervisor import run1
 from firebat.clients import FirebatOverlordClient
 
 
-def build_path(orig_wd, config, fire, time):
-    test_path = orig_wd + '/'
-    test_path += config['title']['task'] + '_'
-    test_path += getpass.getuser() + '_'
-    test_path += time.strftime('%Y%m%d-%H%M%S') + '/'
-    test_path += fire['name']
-    return test_path
+
+#def build_path(orig_wd, config, fire, time):
+#    test_path = orig_wd + '/'
+#    test_path += config['title']['task'] + '_'
+#    test_path += getpass.getuser() + '_'
+#    test_path += time.strftime('%Y%m%d-%H%M%S') + '/'
+#    test_path += fire['name']
+#    return test_path
 
 
 def get_arg_parser():
@@ -81,7 +86,7 @@ def get_arg_parser():
 def main():
     defaults = get_defaults()
     args = get_arg_parser().parse_args()
-    logger = get_logger(is_debug=args.debug, log_path='/tmp/555')
+    logger = get_logger(is_debug=args.debug)
     main_cfg = get_main_cfg()
 
     if args.list_only:
@@ -92,8 +97,14 @@ def main():
         kill_all()
         sys.exit(0)
 
+    isolated_mode = False  # Shud try to call fire-overloard API
     if not main_cfg:
+        isolated_mode = True
         logger.debug('No valid main cfg, can\'t call remote API.')
+
+    if args.stpd_ammo_only or args.isolated or args.verify_cfg:
+        logger.debug('Working in isolated mode, without remote API calls.')
+        isolated_mode = True
 
     # load job configuration.
     try:
@@ -104,7 +115,10 @@ def main():
     except yaml.scanner.ScannerError, e:
         exit_err('Could not parse test config file: %s\n%s' %\
                  (args.config_file, e))
-
+    
+    # merge with default settings
+    defaults['test_cfg'].update(test_cfg)
+    test_cfg = defaults['test_cfg']
     for idx, fire in enumerate(test_cfg['fire']):
         f = copy.copy(defaults['fire_conf'])
         f.update(fire)
@@ -120,10 +134,11 @@ def main():
         sys.exit(0)
 
     oc = None
-    if not check_test_lock(main_cfg['LOCKS_PATH'])['is_busy']:
-        logger.info('Lock is free')
-        # call firebat API if We shud.
-        if not args.isolated and not args.stpd_ammo_only and main_cfg:
+    f_lck = open(main_cfg['LOCK_PATH'], "w")
+    lck, err = get_lock(f_lck.fileno(), exclusive=test_cfg['exclusive_lck'])
+    if lck: 
+        logger.info('Lock acquired successfully')
+        if not isolated_mode:  # call firebat API if We shud
             oc = FirebatOverlordClient(main_cfg['FIERBAT_API_URL'],
                                        main_cfg['FIERBAT_API_TO'])
             test_cfg = test_cfg_complete(test_cfg)
@@ -142,13 +157,10 @@ def main():
                 exit_err('Firebat API call failed: %s' % resp)
 
     else:
-        logger.error('Lock allready acquired, tank is busy.')
+        exit_err(['Lock allready acquired, tank is busy.', err])
 
-    retcode, err = acquire_test_lock(main_cfg['LOCKS_PATH'], get_test_uniq_name(test_cfg))
-    if retcode:
-        logger.info('Lock acquired: %s' % retcode)
-    else:
-        logger.error('Lock acquire failed: %s' % err)
+    test_cfg['uniq_name'] = get_test_uniq_name(test_cfg)
+    test_cfg['wd'] = '%s/%s' % (os.getcwd(), test_cfg['uniq_name'])
 
     if 'ammo' in test_cfg:
         test_cfg = get_ammo(test_cfg, arm_api_url=main_cfg['ARMORER_API_URL'])
@@ -162,20 +174,47 @@ def main():
     if args.stpd_ammo_only:  # generation only, We no need to run tests
         sys.exit(0)
 
-    # start Phantom supervisor daemon for each fire.
-    for f in test_cfg['fire']:
-        if oc:
-            if not 'src_host' in f:
-                f['src_host'] = test_cfg['src_host']
-            retcode, err = oc.push_fire_updates(f['id'], fire_cfg=f,
-                                                status='started')
-            if not retcode:
-                logger.error('Can\'t update fire on API side: %s' % err)
-        retcode, out = start_daemon(f)
-        if retcode == 0:
-            logger.info('Fire %s launched successfully.' % f['name'])
-        else:
-            logger.error('Fire start fails: %s.Exit code: %s' % (out, retcode))
+    if not os.path.exists(test_cfg['wd']):
+        os.makedirs(test_cfg['wd'])
+
+    # start Phantom supervisor daemon
+    supervisor_ctx = daemon.DaemonContext(
+        working_directory=test_cfg['wd'],
+        umask=0o002,
+    )
+    supervisor_ctx.files_preserve = [f_lck]
+   
+    #d
+    #pp.pprint(test_cfg)
+    #pp.pprint(main_cfg)
+ 
+    logger.info('Starting supervisor')
+    with supervisor_ctx:
+        run1(test_cfg, main_cfg)
+
+
+        #logger = get_logger(log_path='%s/fire.log' % test_cfg['wd'],
+        #                    name='supervisor')
+        #logger.info('started')
+        #logger.info(test_cfg)
+        #time.sleep(120)
+        #logger.info('exit')
+    
+        # call firebat API if We shud
+
+    #for f in test_cfg['fire']:
+    #    if oc:
+    #        if not 'src_host' in f:
+    #            f['src_host'] = test_cfg['src_host']
+    #        retcode, err = oc.push_fire_updates(f['id'], fire_cfg=f,
+    #                                            status='started')
+    #        if not retcode:
+    #            logger.error('Can\'t update fire on API side: %s' % err)
+    #    retcode, out = start_daemon(f)
+    #    if retcode == 0:
+    #        logger.info('Fire %s launched successfully.' % f['name'])
+    #    else:
+    #        logger.error('Fire start fails: %s.Exit code: %s' % (out, retcode))
 
 if __name__ == '__main__':
     main()

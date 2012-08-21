@@ -20,23 +20,7 @@ import simplejson as json
 from simplejson.decoder import JSONDecodeError
 
 
-def get_logger(is_debug=False):
-    '''Return logger obj with console hendler.
-    '''
-    logger = logging.getLogger('firebat.console')
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    if is_debug:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s  %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
-
-
-def get_running_fires(pids_path='/tmp/fire/'):
+def get_running_fires(pids_path='/tmp/fire'):
     '''Read PID files from folder and fillter out currently running.
     Args:
         pids_path: str, wahere PID files stored.
@@ -46,9 +30,6 @@ def get_running_fires(pids_path='/tmp/fire/'):
         generator object, yield pids.
     '''
     logger = logging.getLogger('root')
-    #logger = logging.getLogger('firebat.console')
-    #if not logger.handlers:
-    #    logger = get_logger()
 
     if not os.path.exists(pids_path):
         logger.info('No active fires found.' +
@@ -58,7 +39,7 @@ def get_running_fires(pids_path='/tmp/fire/'):
     for pid_file in os.listdir(pids_path):
         if pid_file.endswith('.pid'):
             try:
-                with open(pids_path + pid_file, 'r') as pid_fh:
+                with open('%s/%s' % (pids_path, pid_file), 'r') as pid_fh:
                     pid = int(pid_fh.read())
             except IOError:
                 continue  # file was deleted or any other IO problem
@@ -66,7 +47,7 @@ def get_running_fires(pids_path='/tmp/fire/'):
                 yield pid
 
 
-def get_fire_info(pid, sock_dir='/tmp/fire/sock'):
+def get_test_info(pid, sock_dir='/tmp/fire/sock'):
     '''Read fire status from unix socket.
     Args:
         pid: int, fire PID.
@@ -77,9 +58,6 @@ def get_fire_info(pid, sock_dir='/tmp/fire/sock'):
         state: dict, fire state.
     '''
     logger = logging.getLogger('root')
-    #logger = logging.getLogger('firebat.console')
-    #if not logger.handlers:
-    #    logger = get_logger()
     state = None
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -116,19 +94,18 @@ def list_running_jobs(pids_path='/tmp/fire/', logger=None):
         Just print to STDOUT.
     '''
     logger = logging.getLogger('root')
-    #logger = logging.getLogger('firebat.console')
     if not logger.handlers:
         logger = get_logger()
 
     cnt = 0
     for pid in get_running_fires():
         cnt += 1
-        fire = get_fire_info(pid)
+        fire = get_test_info(pid)
         if fire:
             for key, val in fire.iteritems():
                 print '%15s: %s' % (key, val)
-            ready = (fire['duration'] / float(fire['total_dur'])) * 100
-            print '%15s: %0.2f%%' % ('ready', ready)
+            #ready = (fire['duration'] / float(fire['total_dur'])) * 100
+            #print '%15s: %0.2f%%' % ('ready', ready)
             print '-' * 80
     if cnt == 0:
         logger.info('No active fires found.')
@@ -145,7 +122,6 @@ def kill_all(pids_path='/tmp/fire/'):
     '''
     SLP_TIME = 0.1
     WAIT_TO = 5
-    #logger = logging.getLogger('firebat.console')
     logger = logging.getLogger('root')
     if not logger.handlers:
         logger = get_logger()
@@ -153,22 +129,24 @@ def kill_all(pids_path='/tmp/fire/'):
     cnt = 0
     for pid in get_running_fires():
         cnt += 1
-        fire = get_fire_info(pid)
-        logger.info('send SIGKILL to: %s' % fire['phantom_pid'])
-        os.kill(fire['phantom_pid'], signal.SIGKILL)
-        ready = False
-        t_start = datetime.datetime.now()
-        while not ready:
-            t_delta = datetime.datetime.now() - t_start
-            if t_delta.seconds > WAIT_TO:
-                msg = 'Phantom still working, kill em manually.'
-                break
-            elif (os.path.exists('/proc/%s' % fire['pid']) or\
-                   os.path.exists('/proc/%s' % fire['pid'])):
-                time.sleep(SLP_TIME)
-            else:
-                msg = 'Killed successfully.'
-                break
+        test_state = get_test_info(pid)
+        for fire in test_state['fires']:
+            logger.info('send SIGKILL to: %s' % fire['phantom_pid'])
+            os.kill(fire['phantom_pid'], signal.SIGKILL)
+            ready = False
+            t_start = datetime.datetime.now()
+            while not ready:
+                t_delta = datetime.datetime.now() - t_start
+                if t_delta.seconds > WAIT_TO:
+                    msg = 'Phantom still working, kill em manually.'
+                    break
+                elif os.path.exists('/proc/%s' % fire['phantom_pid']):
+                    #) or\
+                    #   os.path.exists('/proc/%s' % fire['pid'])):
+                    time.sleep(SLP_TIME)
+                else:
+                    msg = 'Killed successfully.'
+                    break
         logger.info('`-> %s' % msg)
 
     if cnt == 0:

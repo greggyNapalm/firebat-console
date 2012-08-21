@@ -17,8 +17,6 @@ import logging
 from jinja2 import Template
 import yaml
 
-from cmd import get_logger
-
 
 def exit_err(msg):
     logger = logging.getLogger('firebat.console')

@@ -48,22 +48,25 @@ def build_path(orig_wd, test_cfg, fire_cfg, time):
 
 
 def get_ammo(test_cfg, arm_api_url='http://armorer.load.io'):
-    '''Ammo providers API wrapper.
+    '''Different ammo providers APIs wrapper.
     Args:
         test_cfg: dict, test config.
-        armorer_api: str, REST API base url.
+        armorer_api: str, Web ammos storage base url.
 
     Returns:
         test_cfg: dict, updated test config.
     '''
     #logger = logging.getLogger('root')
 
-    pref = ''
+    pref = 'ammo/'
     if test_cfg['ammo']['type'] == 'armorer':
-        pref = 'armorer/'
+        #pref = 'armorer/'
         ammo_url = test_cfg['ammo']['source']
         local_ammo_path = fetch_from_armorer(ammo_url,
                                             api_url=arm_api_url)
+
+    if test_cfg['ammo']['type'] == 'local_fs':
+        local_ammo_path = test_cfg['ammo']['source'] 
 
     if not local_ammo_path:
         pass
@@ -93,14 +96,18 @@ def get_ammo(test_cfg, arm_api_url='http://armorer.load.io'):
             fh.close()
 
     elif test_cfg['ammo']['method'] in ['single', 's']:
-        result_ammo_path = '%s%s.qs' % (pref, 'single')
-        with gzip.open(local_ammo_path, 'r') as gz_fh, open(result_ammo_path,
-                'w+') as result_fh:
-            for line in gz_fh:
-                result_fh.write(line)
+        if local_ammo_path.endswith('.gz'):
+            result_ammo_path = '%s%s.qs' % (pref, 'single')
+            with gzip.open(local_ammo_path, 'r') as gz_fh, open(result_ammo_path,
+                    'w+') as result_fh:
+                for line in gz_fh:
+                    result_fh.write(line)
+                result_path = os.path.abspath(result_fh.name)
+        else:
+            result_path = local_ammo_path
 
         for idx, f in enumerate(test_cfg['fire']):
-            test_cfg['fire'][idx]['input_file'] = os.path.abspath(result_fh.name)
+            test_cfg['fire'][idx]['input_file'] = result_path
     else:
         raise FireEmergencyExit('Unknown param in test > ammo > method: %s' %
                                 test_cfg['ammo']['method'])

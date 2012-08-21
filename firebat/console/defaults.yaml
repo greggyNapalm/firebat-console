@@ -1,6 +1,7 @@
 # Default values and validation rules for firebat console tool
 # @see http://firebat-console-ru.readthedocs.org/en/latest/writing-a-firebat-conf.html#fire-yaml
-
+test_cfg:
+    exclusive_lck: False
 
 fire_conf:
     network_proto: 'ipv4'
@@ -8,10 +9,9 @@ fire_conf:
     input_format: 'plain'
     instances: 1000
     loop_ammo: True
-    cache_ammo: False
     offset: 0
 
-fire_required_keys: ['name', 'addr', 'time_periods', 'load',]
-
-title_required_keys: ['task', 'test_name',]
+#fire_required_keys: ['name', 'addr', 'time_periods', 'load',]
+#
+#title_required_keys: ['task', 'test_name',]
 # vim:set ft=yaml:
