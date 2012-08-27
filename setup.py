@@ -15,6 +15,7 @@ except ImportError:
 from firebat import __version__
 
 install_requirements = [
+    'python-daemon',
     'PyYAML',
     'jinja2',
     'progressbar',
