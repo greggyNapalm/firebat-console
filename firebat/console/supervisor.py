@@ -28,6 +28,7 @@ from simplejson.decoder import JSONDecodeError
 
 from firebat.console.conf import get_main_cfg
 from firebat.console.helpers import get_logger
+from firebat.console.aggr1 import proc_whole_phout
 from firebat.clients import FirebatOverlordClient
 
 PHANTOM_CMD = ['phantom', 'run', 'phantom.conf']
@@ -107,7 +108,7 @@ class TestStatus(object):
         stderr: str, Phantom process STDERR.
         eggs: An integer count of the eggs we have laid.
     """
-    def __init__(self, test_cfg, state='Starting'):
+    def __init__(self, test_cfg, main_cfg=None, state='Starting'):
         self.test_cfg = test_cfg
         self.logger = logging.getLogger('supervisor')
         self.pid = os.getpid()
@@ -116,6 +117,9 @@ class TestStatus(object):
         self.duration = 0
         self.uid = getpass.getuser()
         self.wd = os.getcwd()
+
+        if main_cfg:
+            self.main_cfg = main_cfg
 
         self.fires = {} 
         for idx, fire in enumerate(self.test_cfg['fire']):
@@ -137,6 +141,7 @@ class TestStatus(object):
             if fire['end_status'] == None:
                 return False
         self.state = 'phantoms terminated'
+        self.test_cfg['ended_at'] = datetime.datetime.utcnow()
         return True
 
     def run_jobs(self, sleep_time=1):
@@ -158,7 +163,16 @@ class TestStatus(object):
 
         # sleep and pool each child process.
         end_status = 0  # by default All is ok.
-        
+
+        if self.main_cfg:
+            self.oc = FirebatOverlordClient(self.main_cfg['FIERBAT_API_URL'],
+                                            self.main_cfg['FIERBAT_API_TO'])
+
+        if self.oc: # push updates to overlord if needed.
+            retcode, resp = self.oc.push_test_updates(self.test_cfg,
+                                                      status='running')
+            self.logger.info('Push test status update to Overlord side.')
+ 
         while not self.jobs_completed():
             self.duration_update()
             self.log_mtime_update()
@@ -172,11 +186,30 @@ class TestStatus(object):
                     self.test_cfg['fire'][idx]['retcode'] = retcode
                     self.test_cfg['fire'][idx]['stdout'] = job.stdout.read()
                     self.test_cfg['fire'][idx]['stderr'] = job.stderr.read()
+                    self.test_cfg['fire'][idx]['ended_at'] = datetime.datetime.utcnow()
                     self.test_cfg['fire'][idx]['state'] = 'phantom terminated'
                     self.logger.info(
                         '%s > phantom terminated with retcode: %s' %\
                         (fire['name'], retcode))
                     self.test_cfg['fire'][idx]['end_status'] = end_status
+                    if self.oc: # push updates to overlord if needed.
+                        f = self.test_cfg['fire'][idx]
+                        #self.logger.info('Try to patch fire on Overlord side.') 
+                        self.logger.info('%s > %s' % (f['name'],
+                            'Try to patch fire on Overlord side.')) 
+                        # Push fire termination details to remote side.
+                        self.oc.push_fire_updates(f)
+
+                        # Calculate metrics from phout and push them after.
+                        result, msg = proc_whole_phout(f, oc=self.oc)
+                        if result:
+                            self.logger.info('%s > %s' % (f['name'],
+                                'Fire updated on remote side successfully.')) 
+                        else:
+                            self.logger.info('%s > %s' % (f['name'],
+                                'Remote call failed: %s' % msg)) 
+
+
                 else:  # No process is done, wait a bit and check again.
                     self.state = 'Phantoms waiting'
                     time.sleep(sleep_time)
@@ -193,6 +226,12 @@ class TestStatus(object):
                         self.logger.error('Try to stop the fire')
                         job.kill()
                         end_status = -1
+
+        if self.oc: # push updates to overlord if needed.
+            #self.test_cfg['ended_at'] = datetime.datetime.utcnow()
+            retcode, resp = self.oc.push_test_updates(self.test_cfg,
+                                                      status='finished')
+            self.logger.info('Push test status update to Overlord side.')
 
 
     def msg_update(self):
@@ -390,7 +429,7 @@ def run1(test_cfg, main_cfg):
     logger.info('PID file: %s' % pid_path)
     logger.info('PID: %s' % os.getpid())
 
-    test_status = TestStatus(test_cfg)
+    test_status = TestStatus(test_cfg, main_cfg=main_cfg)
 
     # use unix domain socket in thread for IPC
     sock_dir = main_cfg.get('SOCKET_DIR', '/tmp/fire/sock')
@@ -408,7 +447,6 @@ def run1(test_cfg, main_cfg):
 
     test_status.run_jobs()
     test_status.log_result()
-    #time.sleep(60)
     run = False
 
     # on exit
@@ -417,126 +455,12 @@ def run1(test_cfg, main_cfg):
     logger.info('Supervisor exiting')
 
 if __name__ == '__main__':
-    #test_cfg = {   'ammo': {   'http_context': {   'Host': '2.market-exp.pepelac1ft.yandex.ru',
-    #                                'kwargs': {   'headers': {   'Connection': 'close'}}},
-    #            'method': 'single',
-    #            'source': '/home/gkomissarov/docs/proj/market/front-x5/check/ammo/single.qs',
-    #            'type': 'local_fs'},
-    #'exclusive_lck': False,
-    #'fire': [   {   'addr': '87.250.237.157:80',
-    ##'fire': [   {   
-    ##                'addr': '127.0.0.1:80',
-    #                'input_file': '/home/gkomissarov/docs/proj/market/front-x5/check/ammo/single.qs',
-    #                'input_format': 'qs',
-    #                'instances': 1000,
-    #                'load': [['line', 1, 100, '20m']],
-    #                'loop_ammo': True,
-    #                'name': 'pepelac1ft.yandex.ru',
-    #                'network_proto': 'ipv4',
-    #                'offset': 0,
-    #                'tag': ['MARKETVERSTKA', 'front-x5', 'regression'],
-    #                'time_periods': [   10,
-    #                                    45,
-    #                                    50,
-    #                                    100,
-    #                                    150,
-    #                                    300,
-    #                                    500,
-    #                                    '1s',
-    #                                    1500,
-    #                                    '2s',
-    #                                    '3s',
-    #                                    '10s'],
-    #                'total_dur': 120000,
-    #                'transport_proto': 'tcp',
-    #                'wd': '/home/gkomissarov/docs/proj/market/front-x5/check/MARKETVERSTKA-123_gkomissarov_20120819-162212/pepelac1ft.yandex.ru',
-    #                'autostop': {'astop_mtime': 60}
-    #    }
-    #],
-    #'title': {   'task': 'MARKETVERSTKA-123',
-    #             'test_dsc': 'steps nightly',
-    #             'test_name': 'market xscript autotest'},
-    #'uniq_name': 'MARKETVERSTKA-123_gkomissarov_20120819-162212',
-    #'wd': '/home/gkomissarov/docs/proj/market/front-x5/check/MARKETVERSTKA-123_gkomissarov_20120819-162212'}
-
-    #main_cfg = {
-    #    'ARMORER_API_URL': 'http://armorer.load.yandex.net',
-    #    'FIERBAT_API_TO': 5,
-    #    'FIERBAT_API_URL': 'http://lucid.t80.tanks.yandex.net:8080/v1',
-    #    'LOCK_PATH': '/var/lock/lunapark-firebat.lock',
-    #    'LUNA_LOCKS_PATH': '/var/lock',
-    #    'PID_DIR': '/tmp/fire',
-    #    'SOCKET_DIR': '/tmp/fire/sock'
-    #}
-
-    test_cfg = {   'ammo': {   'http_context': {   'Host': '2.market-exp.pepelac1ft.yandex.ru',
-                                    'kwargs': {   'headers': {   'Connection': 'close'}}},
-                'method': 'single',
-                'source': '/home/gkomissarov/docs/proj/market/front-x5/check/ammo/single.qs',
-                'type': 'local_fs'},
-    'exclusive_lck': False,
-    'fire': [   {   'addr': '87.250.237.157:80',
-                    'input_file': '/home/gkomissarov/docs/proj/market/front-x5/check/ammo/single.qs',
-                    'input_format': 'qs',
-                    'instances': 1000,
-                    'load': [['line', 1, 100, '2m']],
-                    'loop_ammo': True,
-                    'name': 'pepelac1ft.yandex.ru#1',
-                    'network_proto': 'ipv4',
-                    'offset': 0,
-                    'tag': ['MARKETVERSTKA', 'front-x5', 'regression'],
-                    'time_periods': [   10,
-                                        45,
-                                        50,
-                                        100,
-                                        150,
-                                        300,
-                                        500,
-                                        '1s',
-                                        1500,
-                                        '2s',
-                                        '3s',
-                                        '10s'],
-                    'total_dur': 120000,
-                    'transport_proto': 'tcp',
-                    'wd': '/home/gkomissarov/docs/proj/market/front-x5/check/up/MARKETVERSTKA-123_gkomissarov_20120820-174022/pepelac1ft.yandex.ru#1'},
-                {   'addr': '87.250.237.157:80',
-                    'input_file': '/home/gkomissarov/docs/proj/market/front-x5/check/ammo/single.qs',
-                    'input_format': 'qs',
-                    'instances': 1000,
-                    'load': [['line', 1, 100, '3m']],
-                    'loop_ammo': True,
-                    'name': 'pepelac1ft.yandex.ru#2',
-                    'network_proto': 'ipv4',
-                    'offset': 0,
-                    'tag': ['MARKETVERSTKA', 'front-x5', 'regression'],
-                    'time_periods': [   10,
-                                        45,
-                                        50,
-                                        100,
-                                        150,
-                                        300,
-                                        500,
-                                        '1s',
-                                        1500,
-                                        '2s',
-                                        '3s',
-                                        '10s'],
-                    'total_dur': 180000,
-                    'transport_proto': 'tcp',
-                    'wd': '/home/gkomissarov/docs/proj/market/front-x5/check/up/MARKETVERSTKA-123_gkomissarov_20120820-174022/pepelac1ft.yandex.ru#2'}],
-    'title': {   'task': 'MARKETVERSTKA-123',
-                 'test_dsc': 'steps nightly',
-                 'test_name': 'market xscript autotest'},
-    'uniq_name': 'MARKETVERSTKA-123_gkomissarov_20120820-174022',
-    'wd': '/home/gkomissarov/docs/proj/market/front-x5/check/up/MARKETVERSTKA-123_gkomissarov_20120820-174022'}
-
-    main_cfg = {   'ARMORER_API_URL': 'http://armorer.load.yandex.net',
-        'FIERBAT_API_TO': 5,
-        'FIERBAT_API_URL': 'http://lucid.t80.tanks.yandex.net:8080/v1',
-        'LOCK_PATH': '/var/lock/lunapark-firebat.lock',
-        'LUNA_LOCKS_PATH': '/var/lock',
-        'PID_DIR': '/tmp/fire',
-        'SOCKET_DIR': '/tmp/fire/sock'}
+    print '#' * 80
+    print 'DUBUG MODE, FOR DEVELOPMENT ONLY'
+    print '#' * 80, '\n' * 4
+    with open('.test_cfg.json', 'r') as test_debug_fh,\
+        open('.main_cfg.json', 'r') as main_debug_fh:
+        test_cfg = json.loads(test_debug_fh.read())
+        main_cfg = json.loads(main_debug_fh.read())
 
     run1(test_cfg, main_cfg)

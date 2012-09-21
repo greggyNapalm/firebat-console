@@ -187,6 +187,11 @@ def main():
     #d
     #pp.pprint(test_cfg)
     #pp.pprint(main_cfg)
+    os.chdir(test_cfg['wd'])
+    with open('.test_cfg.json', 'w+') as test_debug_fh,\
+         open('.main_cfg.json', 'w+') as main_debug_fh:
+         test_debug_fh.write(json.dumps(test_cfg))
+         main_debug_fh.write(json.dumps(main_cfg))
  
     logger.info('Starting supervisor')
     with supervisor_ctx:

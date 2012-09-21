@@ -31,6 +31,21 @@ class FirebatOverlordClient(object):
             'finished': 5,
         }
 
+    def ping(self):
+        '''Check remote API availability.'''
+        try:
+            r = requests.get('%s/ping' % self.base_url,
+                             timeout=self.to)
+        except socket.error, e:
+            return False, e
+        except requests.exceptions.Timeout, e:
+            return False, e
+
+        if r.status_code == 204:
+            return True, 'Reachable'
+        else:
+            return False, 'resp status code: %s' % r.status_code
+
     def registrate_new_test(self, test_cfg):
         '''Register test on API side, get test id and fires ids in responce'''
         body = {
@@ -38,7 +53,7 @@ class FirebatOverlordClient(object):
             'cfg': test_cfg,
         }
         try:
-            r = requests.post('%s/test/firebat' % self.base_url,
+            r = requests.post('%s/test' % self.base_url,
                               data=json.dumps(body), timeout=self.to,
                               headers={'content-type': 'application/json'})
         except socket.error, e:
@@ -51,24 +66,54 @@ class FirebatOverlordClient(object):
         else:
             return False, 'resp status code: %s' % r.status_code
 
-    def push_fire_updates(self, fire_id, fire_cfg=None, status=None,
-                          ended_at=None):
-        '''PATCH fire_cfg entrie on API side.'''
-        if fire_cfg:
-            body = {
-                'cfg': fire_cfg,
-            }
-        else:
-            body = {}
+    def push_test_updates(self, test, status=None):
+        '''PATCH test entrie on API side.'''
+        body = {
+            'id': test['id'],
+        }
 
         if status:
-            body.update({'status': self.statuses[status]})
+            status_id = self.statuses.get(status, None)
+            if status_id:
+                body['status_id'] = status_id
 
-        if ended_at:
-            body.update({'ended_at': ended_at})
+        if 'ended_at' in test:
+            body['ended_at'] = test['ended_at'].isoformat()
 
         try:
-            r = requests.put('%s/fire/%s' % (self.base_url, fire_id),
+            r = requests.patch('%s/test' % self.base_url,
+                             data=json.dumps(body), timeout=self.to,
+                             headers={'content-type': 'application/json'})
+        except socket.error, e:
+            return False, e
+        except requests.exceptions.Timeout, e:
+            return False, e
+
+        if r.status_code == 204:
+            return True, None
+        else:
+            return False, 'resp status code: %s' % r.status_code
+
+    def push_fire_updates(self, fire):
+        '''PATCH fire entrie on API side.'''
+        body = {
+            'id': fire['id'],
+        }
+
+        if 'ended_at' in fire:
+            body['ended_at'] = fire['ended_at'].isoformat()
+
+        if 'end_status' in fire:
+            if fire['end_status'] < 0:
+                body['status_id'] = self.statuses['aborted']
+            else:
+                body['status_id'] = self.statuses['finished']
+
+        if 'result' in fire:
+            body['result'] = fire['result']
+
+        try:
+            r = requests.patch('%s/fire' % self.base_url,
                              data=json.dumps(body), timeout=self.to,
                              headers={'content-type': 'application/json'})
         except socket.error, e:

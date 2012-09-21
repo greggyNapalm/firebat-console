@@ -130,9 +130,14 @@ def kill_all(pids_path='/tmp/fire/'):
     for pid in get_running_fires():
         cnt += 1
         test_state = get_test_info(pid)
+        #if not 'fires' in test_state:
         for fire in test_state['fires']:
             logger.info('send SIGKILL to: %s' % fire['phantom_pid'])
-            os.kill(fire['phantom_pid'], signal.SIGKILL)
+            try:
+                os.kill(fire['phantom_pid'], signal.SIGKILL)
+            except OSError, e:
+                logger.info('Can\'t kill because: %s', e )
+                continue
             ready = False
             t_start = datetime.datetime.now()
             while not ready:
